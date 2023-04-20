@@ -11,20 +11,21 @@ import java.io.FileInputStream;
 import java.util.Properties;
 import java.util.Random;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 public class readFromMQTTToMongoDB implements MqttCallback{
-    private static final String INI_FILE_NAME = "src/main/resources/CloudToMongo.ini";
+    private static final String INI_FILE_NAME = "CloudToMongo.ini";
     private static final Logger logger = Logger.getLogger(readFromMQTTToMongoDB.class.getName());
 
-    private static DBCollection mongocolmov;
+    private DBCollection mongocolmov;
     private static DBCollection mongocoltemp;
     private static String mongoUser;
     private static String mongoPassword;
     private static String mongoAddress;
     private static String mongoReplica;
     private static String mongoDatabase;
-    private static String cloudTopicMov;
+    private static String cloudTopicMov = "pisid_mazemov";
     private static String cloudTopicTemp;
     private static String mongoAuthentication;
     private static String mongoCollectionMov;
@@ -62,6 +63,8 @@ public class readFromMQTTToMongoDB implements MqttCallback{
         readFromMQTTToMongoDB cloudToMongo = new readFromMQTTToMongoDB();
         cloudToMongo.createWindow();
 
+        System.out.println(INI_FILE_NAME);
+
         try (FileInputStream inputStream = new FileInputStream(INI_FILE_NAME)) {
             Properties properties = new Properties();
             properties.load(inputStream);
@@ -81,7 +84,6 @@ public class readFromMQTTToMongoDB implements MqttCallback{
             cloudToMongo.connectCloud(cloudServer, cloudTopicMov, cloudTopicTemp);
             cloudToMongo.connectMongo();
         } catch (Exception e) {
-            e.printStackTrace();
             logger.info("Error reading " + INI_FILE_NAME + " file " + e);
             JOptionPane.showMessageDialog(null, "The " + INI_FILE_NAME + " file wasn't found.", "CloudToMongo", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
@@ -90,11 +92,12 @@ public class readFromMQTTToMongoDB implements MqttCallback{
 
     private void connectCloud(String cloudServer, String cloudTopicMov, String cloudTopicTemp) throws MqttException {
         int clientId = (new Random()).nextInt(100000);
-        MqttClient mqttClient = new MqttClient(cloudServer, "CloudToMongo_" + clientId + "_" + cloudTopicMov);
-        mqttClient.connect();
-        mqttClient.setCallback(this);
-        mqttClient.subscribe(cloudTopicMov);
-        mqttClient.subscribe(cloudTopicTemp);
+        try (MqttClient mqttClient = new MqttClient(cloudServer, "CloudToMongo_" + clientId + "_" + cloudTopicMov)) {
+            mqttClient.connect();
+            mqttClient.setCallback(this);
+            mqttClient.subscribe(cloudTopicMov);
+            mqttClient.subscribe(cloudTopicTemp);
+        }
     }
 
     public void connectMongo() {
@@ -121,7 +124,7 @@ public class readFromMQTTToMongoDB implements MqttCallback{
     }
 
     @Override
-    public void messageArrived(String topic, MqttMessage message) throws Exception {
+    public void messageArrived(String topic, MqttMessage message) {
         try {
             DBObject document_json = (DBObject) JSON.parse(message.toString());
             documentLabel.append(message + "\n");
@@ -138,22 +141,23 @@ public class readFromMQTTToMongoDB implements MqttCallback{
             logger.warning("Error parsing JSON message: " + e.getMessage());
             logger.warning("JSON message: " + message);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "The following exception was launched: ", e);
+            System.exit(1);
         }
     }
 
     @Override
     public void connectionLost(Throwable cause) {
-        System.out.println("Connection to MQTT broker lost. Reason: " + cause.getMessage());
-        cause.printStackTrace();
+        logger.log(Level.WARNING, "Connection to MQTT broker lost. Reason: {0}", cause.getMessage());
+        logger.log(Level.SEVERE, "Stack trace: ", cause);
     }
 
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
         try {
-            System.out.println("Message delivery complete: " + token.getMessage());
+            logger.log(Level.INFO, "Message delivery complete: {0}", token.getMessage());
         } catch (MqttException e) {
-            System.out.println("Error getting message from delivery token: " + e.getMessage());
+            logger.log(Level.SEVERE, "Error getting message from delivery token: {0}", e.getMessage());
         }
     }
 }

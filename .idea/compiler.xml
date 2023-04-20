@@ -10,6 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="CloudToMQTT" target="1.8" />
       <module name="PISID" target="19" />
     </bytecodeTargetLevel>
   </component>
