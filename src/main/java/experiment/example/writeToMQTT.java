@@ -88,7 +88,7 @@ public class writeToMQTT {
                 String mov_msg = "movimentação ratos: {hour:" + formatter.format(now) + ", from:" + from + ", to:" + to + "}";
                 textArea.append(mov_msg + "\n");
                 publishSensor(mov_topic, mov_msg);
-                String temp_msg = "temperatura: " + sensorId + ", " + formatter.format(now) + ", " + temperature;
+                String temp_msg = "{Hora: \"" + formatter.format(now) + "\", Leitura: " + temperature + ", Sensor: " + sensorId + "}";
                 textArea.append(temp_msg + "\n");
                 publishSensor(temp_topic, temp_msg);
             }

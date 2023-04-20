@@ -25,7 +25,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static String cloudTopicMov = "pisid_mazemov";
     private static String cloudTopicTemp = "pisid_mazetemp";
     private static String mongoAuthentication = "false";
-    private static String mongoCollectionMov = "SensoresMovimento";
+    private static final String mongoCollectionMov = "SensoresMovimento";
     private static String mongoCollectionTemp = "SensoresTemperatura";
 
     private final JTextArea documentLabel;
@@ -57,22 +57,40 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     }
 
     public static void main(String[] args) throws MqttException {
-        String cloudServer = "tcp://broker.mqtt-dashboard.com:1883";
+        //String cloudServer = "tcp://broker.mqtt-dashboard.com:1883";
+        String localServer = "tcp://localhost:1883";
         ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
         cloudToMongo.createWindow();
-        cloudToMongo.connectCloud(cloudServer, cloudTopicMov, cloudTopicTemp);
+        cloudToMongo.connectToMqttServer(localServer, cloudTopicMov, cloudTopicTemp);
         cloudToMongo.connectMongo();
     }
 
-    private void connectCloud(String cloudServer, String cloudTopicMov, String cloudTopicTemp) throws MqttException {
+    /**
+     * Connects to an MQTT server and subscribes to the specified topics.
+     *
+     * @param cloudServer the URL of the MQTT server to connect to
+     * @param cloudTopicMov the topic to subscribe to for movement data
+     * @param cloudTopicTemp the topic to subscribe to for temperature data
+     * @throws MqttException if there is an error connecting to the MQTT server or subscribing to topics
+     */
+    private void connectToMqttServer(String cloudServer, String cloudTopicMov, String cloudTopicTemp) throws MqttException {
+        final String CLIENT_ID_PREFIX = "CloudToMongo_";
         int clientId = (new Random()).nextInt(100000);
-        try (MqttClient mqttClient = new MqttClient(cloudServer, "CloudToMongo_" + clientId + "_" + cloudTopicMov)) {
+
+        try (MqttClient mqttClient = new MqttClient(cloudServer, CLIENT_ID_PREFIX + clientId + "_" + cloudTopicMov)) {
             mqttClient.connect();
             mqttClient.setCallback(this);
-            mqttClient.subscribe(cloudTopicMov);
-            mqttClient.subscribe(cloudTopicTemp);
+            try {
+                mqttClient.subscribe(cloudTopicMov);
+                mqttClient.subscribe(cloudTopicTemp);
+            } catch (MqttException e) {
+                logger.log(Level.SEVERE, "Error subscribing to topics: " + e.getMessage());
+            }
+        } catch (MqttException e) {
+            logger.log(Level.WARNING, "Error connecting to MQTT server: " + e.getMessage());
         }
     }
+
 
     public void connectMongo() {
         String mongoURI = "mongodb://";
@@ -103,20 +121,13 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             DBObject document_json = (DBObject) JSON.parse(message.toString());
             documentLabel.append(message + "\n");
 
-            if (mongocoltemp != null && mongocolmov != null) {
-                if (topic.equals(cloudTopicMov)) {
-                    mongocolmov.insert(document_json);
-                }
-                if (topic.equals(cloudTopicTemp)) {
-                    mongocoltemp.insert(document_json);
-                }
+            if (mongocolmov != null && topic.equals(cloudTopicMov)) {
+                mongocolmov.insert(document_json);
+            } else if (mongocoltemp != null && topic.equals(cloudTopicTemp)) {
+                mongocoltemp.insert(document_json);
             }
         } catch (JSONParseException e) {
-            logger.warning("Error parsing JSON message: " + e.getMessage());
-            logger.warning("JSON message: " + message);
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "The following exception was launched: ", e);
-            System.exit(1);
+            logger.log(Level.WARNING, "Invalid JSON string: " + message.toString());
         }
     }
 
