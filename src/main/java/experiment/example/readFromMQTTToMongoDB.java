@@ -16,20 +16,20 @@ import java.util.logging.Level;
 
 public class readFromMQTTToMongoDB implements MqttCallback{
     private static final String INI_FILE_NAME = "CloudToMongo.ini";
-    private static final Logger logger = Logger.getLogger(readFromMQTTToMongoDB.class.getName());
+    private static final Logger logger = Logger.getLogger(ReadFromMQTTToMongoDB.class.getName());
 
     private DBCollection mongocolmov;
     private static DBCollection mongocoltemp;
-    private static String mongoUser;
-    private static String mongoPassword;
-    private static String mongoAddress;
-    private static String mongoReplica;
-    private static String mongoDatabase;
+    private static String mongoUser = "root";
+    private static String mongoPassword = "testesenha";
+    private static String mongoAddress = "localhost:27015,localhost:25015,localhost:23015";
+    private static String mongoReplica = "Sensores";
+    private static String mongoDatabase = "sensores";
     private static String cloudTopicMov = "pisid_mazemov";
-    private static String cloudTopicTemp;
-    private static String mongoAuthentication;
-    private static String mongoCollectionMov;
-    private static String mongoCollectionTemp;
+    private static String cloudTopicTemp = "pisid_mazetemp";
+    private static String mongoAuthentication = "false";
+    private static String mongoCollectionMov = "SensoresMovimento";
+    private static String mongoCollectionTemp = "SensoresTemperatura";
 
     private final JTextArea documentLabel;
 
@@ -60,10 +60,9 @@ public class readFromMQTTToMongoDB implements MqttCallback{
     }
 
     public static void main(String[] args) {
-        readFromMQTTToMongoDB cloudToMongo = new readFromMQTTToMongoDB();
+        String cloudServer = "tcp://broker.mqtt-dashboard.com:1883";
+        ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
         cloudToMongo.createWindow();
-
-        System.out.println(INI_FILE_NAME);
 
         try (FileInputStream inputStream = new FileInputStream(INI_FILE_NAME)) {
             Properties properties = new Properties();
@@ -73,7 +72,7 @@ public class readFromMQTTToMongoDB implements MqttCallback{
             mongoUser = properties.getProperty("mongo_user");
             mongoPassword = properties.getProperty("mongo_password");
             mongoReplica = properties.getProperty("mongo_replica");
-            String cloudServer = properties.getProperty("cloud_server");
+            cloudServer = properties.getProperty("cloud_server");
             cloudTopicMov = properties.getProperty("cloud_topic_mov");
             cloudTopicTemp = properties.getProperty("cloud_topic_temp");
             mongoDatabase = properties.getProperty("mongo_database");
@@ -102,25 +101,25 @@ public class readFromMQTTToMongoDB implements MqttCallback{
 
     public void connectMongo() {
         String mongoURI = "mongodb://";
-        if (Boolean.parseBoolean(readFromMQTTToMongoDB.mongoAuthentication)) {
-            mongoURI += readFromMQTTToMongoDB.mongoUser + ":" + readFromMQTTToMongoDB.mongoPassword + "@";
+        if (Boolean.parseBoolean(ReadFromMQTTToMongoDB.mongoAuthentication)) {
+            mongoURI += ReadFromMQTTToMongoDB.mongoUser + ":" + ReadFromMQTTToMongoDB.mongoPassword + "@";
         }
-        mongoURI += readFromMQTTToMongoDB.mongoAddress;
+        mongoURI += ReadFromMQTTToMongoDB.mongoAddress;
 
-        if (!readFromMQTTToMongoDB.mongoReplica.equals("false")) {
-            mongoURI += "/?replicaSet=" + readFromMQTTToMongoDB.mongoReplica;
-            if (Boolean.parseBoolean(readFromMQTTToMongoDB.mongoAuthentication)) {
+        if (!ReadFromMQTTToMongoDB.mongoReplica.equals("false")) {
+            mongoURI += "/?replicaSet=" + ReadFromMQTTToMongoDB.mongoReplica;
+            if (Boolean.parseBoolean(ReadFromMQTTToMongoDB.mongoAuthentication)) {
                 mongoURI += "&authSource=admin";
             }
-        } else if (Boolean.parseBoolean(readFromMQTTToMongoDB.mongoAuthentication)) {
+        } else if (Boolean.parseBoolean(ReadFromMQTTToMongoDB.mongoAuthentication)) {
             mongoURI += "/?authSource=admin";
         }
 
         MongoClientURI uri = new MongoClientURI(mongoURI);
         MongoClient mongoClient = new MongoClient(uri);
-        DB db = mongoClient.getDB(readFromMQTTToMongoDB.mongoDatabase);
-        mongocoltemp = db.getCollection(readFromMQTTToMongoDB.mongoCollectionTemp);
-        mongocolmov = db.getCollection(readFromMQTTToMongoDB.mongoCollectionMov);
+        DB db = mongoClient.getDB(ReadFromMQTTToMongoDB.mongoDatabase);
+        mongocoltemp = db.getCollection(ReadFromMQTTToMongoDB.mongoCollectionTemp);
+        mongocolmov = db.getCollection(ReadFromMQTTToMongoDB.mongoCollectionMov);
     }
 
     @Override
