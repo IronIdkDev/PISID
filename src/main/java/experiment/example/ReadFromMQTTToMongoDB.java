@@ -7,15 +7,12 @@ import org.eclipse.paho.client.mqttv3.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.FileInputStream;
-import java.util.Properties;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
 
 public class ReadFromMQTTToMongoDB implements MqttCallback{
-    private static final String INI_FILE_NAME = "CloudToMongo.ini";
     private static final Logger logger = Logger.getLogger(ReadFromMQTTToMongoDB.class.getName());
 
     private DBCollection mongocolmov;
@@ -59,34 +56,12 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         frame.setVisible(true);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws MqttException {
         String cloudServer = "tcp://broker.mqtt-dashboard.com:1883";
         ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
         cloudToMongo.createWindow();
-
-        try (FileInputStream inputStream = new FileInputStream(INI_FILE_NAME)) {
-            Properties properties = new Properties();
-            properties.load(inputStream);
-
-            mongoAddress = properties.getProperty("mongo_address");
-            mongoUser = properties.getProperty("mongo_user");
-            mongoPassword = properties.getProperty("mongo_password");
-            mongoReplica = properties.getProperty("mongo_replica");
-            cloudServer = properties.getProperty("cloud_server");
-            cloudTopicMov = properties.getProperty("cloud_topic_mov");
-            cloudTopicTemp = properties.getProperty("cloud_topic_temp");
-            mongoDatabase = properties.getProperty("mongo_database");
-            mongoAuthentication = properties.getProperty("mongo_authentication");
-            mongoCollectionMov = properties.getProperty("mongo_collection_mov");
-            mongoCollectionTemp = properties.getProperty("mongo_collection_temp");
-
-            cloudToMongo.connectCloud(cloudServer, cloudTopicMov, cloudTopicTemp);
-            cloudToMongo.connectMongo();
-        } catch (Exception e) {
-            logger.info("Error reading " + INI_FILE_NAME + " file " + e);
-            JOptionPane.showMessageDialog(null, "The " + INI_FILE_NAME + " file wasn't found.", "CloudToMongo", JOptionPane.ERROR_MESSAGE);
-            System.exit(1);
-        }
+        cloudToMongo.connectCloud(cloudServer, cloudTopicMov, cloudTopicTemp);
+        cloudToMongo.connectMongo();
     }
 
     private void connectCloud(String cloudServer, String cloudTopicMov, String cloudTopicTemp) throws MqttException {
