@@ -1,0 +1,6 @@
+//find() commands to query the database
+
+use('sensores')
+
+//db.SensoresMovimento.find()
+db.SensoresTemperatura.find()

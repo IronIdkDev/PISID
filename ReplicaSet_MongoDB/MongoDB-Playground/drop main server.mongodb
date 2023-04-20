@@ -1,0 +1,6 @@
+// Drop main server
+
+use('sensores')
+
+rs.stepDown()
+//rs.status()

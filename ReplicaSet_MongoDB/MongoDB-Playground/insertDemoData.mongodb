@@ -1,0 +1,35 @@
+use('sensores')
+
+/*db.SensoresMovimento.insertOne(
+    {
+        _id: 0,
+        Timestamp: "2023-01-09 10:43:49.816173",
+        FromRoom: "1",
+        ToRoom: "3",
+})*/
+
+//db.SensoresMovimento.find()
+
+//db.SensoresTemperatura.drop()
+
+/*db.SensoresTemperatura.insertMany([
+    {
+        _id: 0,
+        Timestamp: "2023-01-09 10:48:26.220914",
+        Room: "1",
+        Temperature: 9,
+        },
+    {
+        _id: 1,
+        Timestamp: "2023-01-09 10:48:26.220914",
+        Room: "2",
+        Temperature: 9.600000000000001,
+    }
+])*/
+
+//db.SensoresTemperatura.find()
+
+// Get entries where Leitura is greater than 7.5
+
+db.SensoresTemperatura.find({Leitura: {$gt: 7.5}})
+
