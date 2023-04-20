@@ -45,8 +45,6 @@ public class writeToMQTT {
         String mov_topic = "pisid_mazemov";
         String temp_topic = "pisid_mazetemp";
         int sensorId = 1;
-        int from = 1;
-        int to = 3;
         double temperature = 9;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
         Random rand = new Random(123456789);
@@ -69,37 +67,57 @@ public class writeToMQTT {
         frame.setVisible(true);
         frame.setLocationRelativeTo(null);
 
-
-        // Add action listeners to the buttons
-        stopButton.addActionListener(e -> sendingData = false);
-
-        startButton.addActionListener(e -> {
-            sendingData = true;
-            resumeSendingData();
-        });
+        stopButton.addActionListener(e -> stopSendingData());
+        startButton.addActionListener(e -> startSendingData());
 
         // Start sending data
         while (sendingData) {
-            LocalDateTime now = LocalDateTime.now();
-            if (rand.nextDouble() < 0.2) { // randomly end an experience with 20% probability
-                String end_msg = "{hour:" + formatter.format(now) + ", from:0, to:0}";
-                publishSensor(mov_topic, end_msg);
+            if (rand.nextDouble() < 0.2) {
+                endExperience(mov_topic, formatter);
             } else {
-                String mov_msg = "movimentação ratos: {hour:" + formatter.format(now) + ", from:" + from + ", to:" + to + "}";
-                textArea.append(mov_msg + "\n");
-                publishSensor(mov_topic, mov_msg);
-                String temp_msg = "{Hora: \"" + formatter.format(now) + "\", Leitura: " + temperature + ", Sensor: " + sensorId + "}";
-                textArea.append(temp_msg + "\n");
-                publishSensor(temp_topic, temp_msg);
+                sendMovementData(mov_topic, rand, formatter, textArea);
+                sendTemperatureData(temp_topic, rand, formatter, sensorId, temperature, textArea);
+                temperature = rand.nextDouble() * 10;
             }
             try {
-                synchronized (lock) {
-                    lock.wait(1000);
-                }
+                Thread.sleep(300);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private static void stopSendingData() {
+        sendingData = false;
+    }
+
+    private static void startSendingData() {
+        sendingData = true;
+    }
+
+    private static void endExperience(String topic, DateTimeFormatter formatter) {
+        LocalDateTime now = LocalDateTime.now();
+        String end_msg = "{hour:\"" + formatter.format(now) + "\", from:" + 0 + ", to:" + 0 + "}";
+        publishSensor(topic, end_msg);
+    }
+
+    private static void sendMovementData(String topic, Random rand, DateTimeFormatter formatter, JTextArea textArea) {
+        int from = rand.nextInt(9) + 1;
+        int to = rand.nextInt(9) + 1;
+        LocalDateTime now = LocalDateTime.now();
+        String mov_msg = "{hour:\"" + formatter.format(now) + "\", from:" + from + ", to:" + to + "}";
+        textArea.append(mov_msg + "\n");
+        publishSensor(topic, mov_msg);
+    }
+
+    private static void sendTemperatureData(String topic, Random rand, DateTimeFormatter formatter, int sensorId, double temperature, JTextArea textArea) {
+        LocalDateTime now = LocalDateTime.now();
+        String temp_msg1 = "{Hora: \"" + formatter.format(now) + "\", Leitura: " + rand.nextDouble() * 10 + ", Sensor: " + 1 + "}";
+        String temp_msg2 = "{Hora: \"" + formatter.format(now) + "\", Leitura: " + rand.nextDouble() * 10 + ", Sensor: " + 2 + "}";
+        textArea.append(temp_msg1 + "\n");
+        textArea.append(temp_msg2 + "\n");
+        publishSensor(topic, temp_msg1);
+        publishSensor(topic, temp_msg2);
     }
 
     // Method to notify the thread to resume execution
