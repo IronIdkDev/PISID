@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 
-public class readFromMQTTToMongoDB implements MqttCallback{
+public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static final String INI_FILE_NAME = "CloudToMongo.ini";
     private static final Logger logger = Logger.getLogger(ReadFromMQTTToMongoDB.class.getName());
 
@@ -33,7 +33,7 @@ public class readFromMQTTToMongoDB implements MqttCallback{
 
     private final JTextArea documentLabel;
 
-    private readFromMQTTToMongoDB() {
+    private ReadFromMQTTToMongoDB() {
         documentLabel = new JTextArea("\n");
     }
 
