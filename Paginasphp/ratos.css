@@ -1,0 +1,105 @@
+body {
+  background-color: #cc9f68;
+
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    color: #fff9f9;
+    font-size: 36px;
+    margin-top: 20px;
+}
+h2 {
+    color: #fff8f8;
+    font-size: 36px;
+    margin-top: 20px;
+  }
+form {
+    margin-top: 20px;
+}
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #f3f3f3;
+  }
+select {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 18px;
+    background-color:#fff;
+    color: #000000;
+}
+
+select:hover {
+    background-color: #f2f2f2;
+    color: #000000;
+}
+
+input[type=text], input[type=password], input[type=submit], input[type=email] {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+  input[type=tel] {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 18px;
+    }
+input[type=submit][name=submitEstado] {
+    background-color: red;
+}
+  
+input[type=submit] {
+    background-color: #4CAF50;
+    color: #fff;
+  }
+  
+input[type=submit]:hover {
+    background-color: #725d44;  
+    color: #f2f2f2;
+  }
+input[type=number], input[type=submit] {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-right: 10px;
+    font-size: 18px;
+    background-color:#fff;    color: #000000;
+}
+
+
+input[type=submit]:hover {
+  background-color: #725d44;  
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+    border: 1px solid black;
+}
+
+th, td {
+    text-align: left;
+    padding: 8px;
+    border: 1px solid black;
+}
+
+th {
+  background-color: #725d44;    color: white;
+}
+
+
+tr:nth-child(even) {
+  background-color: #fff;
+}
+
+tr:nth-child(odd) {
+  background-color: #f2f2f2;
+}
