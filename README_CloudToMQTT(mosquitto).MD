@@ -6,5 +6,8 @@
 2.1 - net stop mosquitto
 
 3 - Navigate to mosquitto folder and use the following command (after you have created the testconfig.txt file):
-  mosquitto -v -c config.txt
+  mosquitto -v -c testconfig.txt
   
+
+The 'testconfig.txt' file show look like this(available on the repo in /otherFiles):
+
