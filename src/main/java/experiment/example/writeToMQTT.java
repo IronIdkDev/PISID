@@ -97,7 +97,7 @@ public class writeToMQTT {
 
     private static void endExperience(String topic, DateTimeFormatter formatter) {
         LocalDateTime now = LocalDateTime.now();
-        String end_msg = "{hour:\"" + formatter.format(now) + "\", from:" + 0 + ", to:" + 0 + "}";
+        String end_msg = "{Hour:\"" + formatter.format(now) + "\", from:" + 0 + ", to:" + 0 + "}";
         publishSensor(topic, end_msg);
     }
 
@@ -105,15 +105,15 @@ public class writeToMQTT {
         int from = rand.nextInt(9) + 1;
         int to = rand.nextInt(9) + 1;
         LocalDateTime now = LocalDateTime.now();
-        String mov_msg = "{hour:\"" + formatter.format(now) + "\", from:" + from + ", to:" + to + "}";
+        String mov_msg = "{Hour:\"" + formatter.format(now) + "\", from:" + from + ", to:" + to + "}";
         textArea.append(mov_msg + "\n");
         publishSensor(topic, mov_msg);
     }
 
     private static void sendTemperatureData(String topic, Random rand, DateTimeFormatter formatter, int sensorId, double temperature, JTextArea textArea) {
         LocalDateTime now = LocalDateTime.now();
-        String temp_msg1 = "{Hora: \"" + formatter.format(now) + "\", Leitura: " + rand.nextDouble() * 10 + ", Sensor: " + 1 + "}";
-        String temp_msg2 = "{Hora: \"" + formatter.format(now) + "\", Leitura: " + rand.nextDouble() * 10 + ", Sensor: " + 2 + "}";
+        String temp_msg1 = "{Hour: \"" + formatter.format(now) + "\", Leitura: " + rand.nextDouble() * 10 + ", Sensor: " + 1 + "}";
+        String temp_msg2 = "{Hour: \"" + formatter.format(now) + "\", Leitura: " + rand.nextDouble() * 10 + ", Sensor: " + 2 + "}";
         textArea.append(temp_msg1 + "\n");
         textArea.append(temp_msg2 + "\n");
         publishSensor(topic, temp_msg1);
