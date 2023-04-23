@@ -16,7 +16,8 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static final Logger logger = Logger.getLogger(ReadFromMQTTToMongoDB.class.getName());
 
     private DBCollection mongocolmov;
-    private static DBCollection mongocoltemp;
+    private DBCollection mongocoltemp;
+    private DBCollection mongocolout;
     private static String mongoUser = "root";
     private static String mongoPassword = "testesenha";
     private static String mongoAddress = "localhost:27015,localhost:25015,localhost:23015";
@@ -26,7 +27,8 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static String cloudTopicTemp = "pisid_mazetemp";
     private static String mongoAuthentication = "false";
     private static final String mongoCollectionMov = "SensoresMovimento";
-    private static String mongoCollectionTemp = "SensoresTemperatura";
+    private static final String mongoCollectionTemp = "SensoresTemperatura";
+    private static final String mongoCollectionOut = "Outliers";
 
     private final JTextArea documentLabel;
 
@@ -113,6 +115,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         DB db = mongoClient.getDB(ReadFromMQTTToMongoDB.mongoDatabase);
         mongocoltemp = db.getCollection(ReadFromMQTTToMongoDB.mongoCollectionTemp);
         mongocolmov = db.getCollection(ReadFromMQTTToMongoDB.mongoCollectionMov);
+        mongocolout = db.getCollection(ReadFromMQTTToMongoDB.mongoCollectionOut);
     }
 
     @Override
