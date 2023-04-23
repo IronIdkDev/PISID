@@ -112,8 +112,24 @@ public class writeToMQTT {
 
     private static void sendTemperatureData(String topic, Random rand, DateTimeFormatter formatter, int sensorId, double temperature, JTextArea textArea) {
         LocalDateTime now = LocalDateTime.now();
-        String temp_msg1 = "{Hour: \"" + formatter.format(now) + "\", Leitura: " + rand.nextDouble() * 10 + ", Sensor: " + 1 + "}";
-        String temp_msg2 = "{Hour: \"" + formatter.format(now) + "\", Leitura: " + rand.nextDouble() * 10 + ", Sensor: " + 2 + "}";
+        double tempValue1 = temperature;
+        double tempValue2 = temperature;
+        if (rand.nextDouble() < 0.1) {
+            // Generate a high outlier
+            tempValue1 += rand.nextDouble() * 50;
+        } else if (rand.nextDouble() < 0.1) {
+            // Generate a low outlier
+            tempValue1 -= rand.nextDouble() * 50;
+        }
+        if (rand.nextDouble() < 0.1) {
+            // Generate a high outlier
+            tempValue2 += rand.nextDouble() * 50;
+        } else if (rand.nextDouble() < 0.1) {
+            // Generate a low outlier
+            tempValue2 -= rand.nextDouble() * 50;
+        }
+        String temp_msg1 = "{Hour: \"" + formatter.format(now) + "\", Leitura: " + tempValue1 + ", Sensor: " + 1 + "}";
+        String temp_msg2 = "{Hour: \"" + formatter.format(now) + "\", Leitura: " + tempValue2 + ", Sensor: " + 2 + "}";
         textArea.append(temp_msg1 + "\n");
         textArea.append(temp_msg2 + "\n");
         publishSensor(topic, temp_msg1);

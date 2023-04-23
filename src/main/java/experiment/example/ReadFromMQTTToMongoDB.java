@@ -7,6 +7,7 @@ import org.eclipse.paho.client.mqttv3.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -29,6 +30,8 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static final String mongoCollectionMov = "SensoresMovimento";
     private static final String mongoCollectionTemp = "SensoresTemperatura";
     private static final String mongoCollectionOut = "Outliers";
+    private ArrayList<Double> tempValues = new ArrayList<>();
+
 
     private final JTextArea documentLabel;
 
@@ -124,15 +127,65 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             DBObject document_json = (DBObject) JSON.parse(message.toString());
             documentLabel.append(message + "\n");
 
-            if (mongocolmov != null && topic.equals(cloudTopicMov)) {
-                mongocolmov.insert(document_json);
-            } else if (mongocoltemp != null && topic.equals(cloudTopicTemp)) {
+            if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
                 mongocoltemp.insert(document_json);
+                if (mongocoltemp.count() == 0) {
+                    // Collection is empty, insert the document
+                    mongocoltemp.insert(document_json);
+                } else {
+                    // Collection has documents, process for outliers
+                    double temp = Double.parseDouble(document_json.get("Leitura").toString());
+                    tempValues.add(temp);
+                    if (tempValues.size() > 10) {
+                        tempValues.remove(0);
+                    }
+
+                    double[] values = new double[tempValues.size()];
+                    for (int i = 0; i < tempValues.size(); i++) {
+                        values[i] = tempValues.get(i);
+                    }
+
+                    double zScore = calculateZScore(values, temp);
+
+                    if (Math.abs(zScore) > 2.0) {
+                        logger.log(Level.INFO, "Anomaly detected!! " + message);
+                        mongocolout.insert(document_json);
+                    }
+                }
+            } else if (topic.equals(cloudTopicMov) && mongocolmov != null) {
+                mongocolmov.insert(document_json);
             }
-        } catch (JSONParseException e) {
-            logger.log(Level.WARNING, "Invalid JSON string: " + message.toString());
+        } catch (JSONParseException | NumberFormatException e) {
+            logger.log(Level.WARNING, "Error parsing JSON: " + e.getMessage());
         }
     }
+
+
+    /**
+     * Calculates the ZScore for a current value of temperature, taking into consideration the previous temperature values.
+     * Returns the ZScore which will be used to see if a value is an outlier.
+     * @param values
+     * @param value
+     * @return
+     */
+    private double calculateZScore(double[] values, double value) {
+        double sum = 0.0;
+        for (double v : values) {
+            sum += v;
+        }
+        double mean = sum / values.length;
+
+        double squareSum = 0.0;
+        for (double v : values) {
+            squareSum += Math.pow(v - mean, 2);
+        }
+        double stdDev = Math.sqrt(squareSum / (values.length - 1));
+
+        double zScore = (value - mean) / stdDev;
+        logger.log(Level.INFO, "Z-Score: " + zScore);
+        return zScore;
+    }
+
 
     @Override
     public void connectionLost(Throwable cause) {
