@@ -1,4 +1,4 @@
-package experiment.example;
+package experiment.mice;
 
 public class Main {
     public static void main(String[] args) {

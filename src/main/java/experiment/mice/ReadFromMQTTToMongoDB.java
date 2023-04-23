@@ -1,4 +1,4 @@
-package experiment.example;
+package experiment.mice;
 
 import com.mongodb.*;
 import com.mongodb.util.JSON;
