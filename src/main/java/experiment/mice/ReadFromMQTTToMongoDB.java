@@ -62,7 +62,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     }
 
     public static void main(String[] args) throws MqttException {
-        String cloudServer = "tcp://broker.mqtt-dashboard.com:1883";
+        // String cloudServer = "tcp://broker.mqtt-dashboard.com:1883";
         String localServer = "tcp://localhost:1883";
         ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
         cloudToMongo.createWindow();

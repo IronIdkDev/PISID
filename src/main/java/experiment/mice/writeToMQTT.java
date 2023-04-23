@@ -121,10 +121,10 @@ public class writeToMQTT {
             // Generate a low outlier
             tempValue1 -= rand.nextDouble() * 50;
         }
-        if (rand.nextDouble() < 0.1) {
+        if (rand.nextDouble() > 0.9) {
             // Generate a high outlier
             tempValue2 += rand.nextDouble() * 50;
-        } else if (rand.nextDouble() < 0.1) {
+        } else if (rand.nextDouble() > 0.9) {
             // Generate a low outlier
             tempValue2 -= rand.nextDouble() * 50;
         }
