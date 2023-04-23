@@ -1,8 +1,12 @@
 package experiment.mice;
 
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello world!");
-    }
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+public class Main {
+    private static final Logger logger = Logger.getLogger(ReadFromMQTTToMongoDB.class.getName());
+
+    public static void main(String[] args) {
+        logger.log(Level.INFO, "The Main is still in development");
+    }
 }

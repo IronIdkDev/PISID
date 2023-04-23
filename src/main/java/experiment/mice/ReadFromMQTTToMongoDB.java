@@ -8,7 +8,7 @@ import org.eclipse.paho.client.mqttv3.*;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -80,7 +80,8 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
      */
     private void connectToMqttServer(String cloudServer, String cloudTopicMov, String cloudTopicTemp) throws MqttException {
         final String CLIENT_ID_PREFIX = "CloudToMongo_";
-        int clientId = (new Random()).nextInt(100000);
+        SecureRandom secureRandom = new SecureRandom();
+        int clientId = secureRandom.nextInt(100000);
 
         try (MqttClient mqttClient = new MqttClient(cloudServer, CLIENT_ID_PREFIX + clientId + "_" + cloudTopicMov)) {
             mqttClient.connect();
