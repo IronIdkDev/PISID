@@ -129,10 +129,10 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             documentLabel.append(message + "\n");
 
             if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
-                insertDocument(mongocoltemp, document_json);
+                mongocoltemp.insert(document_json);
                 processTemperatureValues(document_json);
             } else if (topic.equals(cloudTopicMov) && mongocolmov != null) {
-                insertDocument(mongocolmov, document_json);
+                mongocolmov.insert(document_json);
             }
         } catch (JSONParseException | NumberFormatException e) {
             logError(e);
@@ -171,6 +171,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private void logError(Exception e) {
         logger.log(Level.WARNING, "Error parsing JSON: " + e.getMessage());
     }
+
 
 
     /**
