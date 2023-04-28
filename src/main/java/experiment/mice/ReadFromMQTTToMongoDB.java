@@ -27,9 +27,9 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static String cloudTopicMov = "pisid_mazemov";
     private static String cloudTopicTemp = "pisid_mazetemp";
     private static String mongoAuthentication = "false";
-    private static final String mongoCollectionMov = "SensoresMovimento";
-    private static final String mongoCollectionTemp = "SensoresTemperatura";
-    private static final String mongoCollectionOut = "Outliers";
+    private static final String MONGOCOLLECTIONMOV = "SensoresMovimento";
+    private static final String MONGOCOLLECTIONTEMP = "SensoresTemperatura";
+    private static final String MONGOCOLLECTIONOUT = "Outliers";
     private ArrayList<Double> tempValues = new ArrayList<>();
 
 
@@ -117,9 +117,9 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         MongoClientURI uri = new MongoClientURI(mongoURI);
         MongoClient mongoClient = new MongoClient(uri);
         DB db = mongoClient.getDB(ReadFromMQTTToMongoDB.mongoDatabase);
-        mongocoltemp = db.getCollection(ReadFromMQTTToMongoDB.mongoCollectionTemp);
-        mongocolmov = db.getCollection(ReadFromMQTTToMongoDB.mongoCollectionMov);
-        mongocolout = db.getCollection(ReadFromMQTTToMongoDB.mongoCollectionOut);
+        mongocoltemp = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONTEMP);
+        mongocolmov = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONMOV);
+        mongocolout = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONOUT);
     }
 
     @Override
