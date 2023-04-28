@@ -117,14 +117,14 @@ public class writeToMQTT {
         if (rand.nextDouble() < 0.1) {
             // Generate a high outlier
             tempValue1 += rand.nextDouble() * 50;
-        } else if (rand.nextDouble() < 0.1) {
+        } else if (rand.nextDouble() > 0.1 && rand.nextDouble() < 0.2) {
             // Generate a low outlier
             tempValue1 -= rand.nextDouble() * 50;
         }
         if (rand.nextDouble() > 0.9) {
             // Generate a high outlier
             tempValue2 += rand.nextDouble() * 50;
-        } else if (rand.nextDouble() > 0.9) {
+        } else if (rand.nextDouble() < 0.9 && rand.nextDouble() > 0.8) {
             // Generate a low outlier
             tempValue2 -= rand.nextDouble() * 50;
         }
