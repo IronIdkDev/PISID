@@ -129,36 +129,47 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             documentLabel.append(message + "\n");
 
             if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
-                mongocoltemp.insert(document_json);
-                if (mongocoltemp.count() == 0) {
-                    // Collection is empty, insert the document
-                    mongocoltemp.insert(document_json);
-                } else {
-                    // Collection has documents, process for outliers
-                    double temp = Double.parseDouble(document_json.get("Leitura").toString());
-                    tempValues.add(temp);
-                    if (tempValues.size() > 10) {
-                        tempValues.remove(0);
-                    }
-
-                    double[] values = new double[tempValues.size()];
-                    for (int i = 0; i < tempValues.size(); i++) {
-                        values[i] = tempValues.get(i);
-                    }
-
-                    double zScore = calculateZScore(values, temp);
-
-                    if (Math.abs(zScore) > 2.0) {
-                        logger.log(Level.INFO, "Anomaly detected!! " + message);
-                        mongocolout.insert(document_json);
-                    }
-                }
+                insertDocument(mongocoltemp, document_json);
+                processTemperatureValues(document_json);
             } else if (topic.equals(cloudTopicMov) && mongocolmov != null) {
-                mongocolmov.insert(document_json);
+                insertDocument(mongocolmov, document_json);
             }
         } catch (JSONParseException | NumberFormatException e) {
-            logger.log(Level.WARNING, "Error parsing JSON: " + e.getMessage());
+            logError(e);
         }
+    }
+
+    private void insertDocument(DBCollection collection, DBObject document) {
+        if (collection.count() == 0) {
+            // Collection is empty, insert the document
+            collection.insert(document);
+        } else {
+            // Collection has documents, do nothing
+        }
+    }
+
+    private void processTemperatureValues(DBObject document) {
+        double temp = Double.parseDouble(document.get("Leitura").toString());
+        tempValues.add(temp);
+        if (tempValues.size() > 10) {
+            tempValues.remove(0);
+        }
+
+        double[] values = new double[tempValues.size()];
+        for (int i = 0; i < tempValues.size(); i++) {
+            values[i] = tempValues.get(i);
+        }
+
+        double zScore = calculateZScore(values, temp);
+
+        if (Math.abs(zScore) > 2.0) {
+            logger.log(Level.INFO, "Anomaly detected!! " + document);
+            mongocolout.insert(document);
+        }
+    }
+
+    private void logError(Exception e) {
+        logger.log(Level.WARNING, "Error parsing JSON: " + e.getMessage());
     }
 
 
