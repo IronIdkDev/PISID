@@ -44,9 +44,10 @@ if ($conn->connect_error) {
 			// Se a consulta retornar resultados, mostrar numa tabela
 			if ($result->num_rows > 0) {
 				echo "<table>";
-				echo "<tr><th>IDExperiência</th><th>Descrição</th><th>Data e Hora</th><th>Número de Ratos</th><th>Limite de Ratos por Sala</th><th>Segundos sem movimento</th><th>Temperatura Ideal</th><th>Variação Máxima da Temperatura </th><th>Ativa(1=Sim, 0 = Não)</th></tr>";
+				echo "<tr><th>IDExperiência</th><th>Descrição</th><th>Data e Hora</th><th>Número de Ratos</th><th>Limite de Ratos por Sala</th><th>Segundos sem movimento</th><th>Temperatura Ideal</th><th>Variação Máxima da Temperatura </th><th>Ativa(1=Sim, 0 = Não)</th><th>Detalhes da experiência</th></tr>";
 				while($row = $result->fetch_assoc()) {
-					echo "<tr><td>" . $row["IDexperiência"] . "</td><td>" . $row["Descricao"] . "</td><td>".  $row["DataHora"] . "</td><td>" . $row["NumeroRatos"] . "</td><td>" . $row["LimiteRatosSala"] . "</td><td>" . $row["SegundosSemMovimento"] . "</td><td>" . $row["TemperaturaIdeal"] . "</td><td>" . $row["VariacaoTemperaturaMaxima"] . "</td><td>" . $row["Ativa"] . "</tr>";
+					$id = intval($row["IDexperiência"]);
+					echo "<tr><td>" . $row["IDexperiência"] . "</td><td>" . $row["Descricao"] . "</td><td>".  $row["DataHora"] . "</td><td>" . $row["NumeroRatos"] . "</td><td>" . $row["LimiteRatosSala"] . "</td><td>" . $row["SegundosSemMovimento"] . "</td><td>" . $row["TemperaturaIdeal"] . "</td><td>" . $row["VariacaoTemperaturaMaxima"] . "</td><td>" . $row["Ativa"] . "</td><td><form method='post'><input type='hidden' name='detalhes' value='$id'><input type='hidden' name='Detalhes' value=Detalhes><input type='submit' name='mostraDetalhes' value=Detalhes style='background-color: green;'></form></td></tr>";
 				}
 				echo "</table>";
 			} else {
@@ -121,31 +122,188 @@ if ($conn->connect_error) {
 		}else if (isset($_POST["formulario"])) {
 			echo "ENTREI NO IF ";
 			$nome = $_POST["nome"];
-			$password = $_POST["password"];
+			$pass = $_POST["password"];
 			$email = $_POST["email"];
 			$telefone = $_POST["telefone"];
 			$tipo = $_POST["tipo"];
 
 			
-			if (isset($tipo) && $tipo === "INV") {
+			if (isset($tipo) && $tipo === "ADM") {
 				echo "Criaste um inventor";
 				$sql = "CALL criar_Utilizador('$nome','$telefone','$tipo','$email')";
 				$result = $conn->query($sql);
+
+					// Cria a conexão
+					//$conn2 = new mysqli($servername, "root", "", "");
+					$conn2 = new mysqli($servername, $username, $password, "");
+
+
+					//$sql1 = "CREATE USER '$email'@'%' IDENTIFIED VIA mysql_native_password USING '$hashed_password';GRANT ALL PRIVILEGES ON *.* TO '$email'@'%' REQUIRE NONE WITH GRANT OPTION MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;GRANT ALL PRIVILEGES ON `pisid`.* TO '$email'@'%';";
+					$sql1 = "CREATE USER '$email'@'%' IDENTIFIED BY '$pass';";
+					$sql2 = "GRANT ALL PRIVILEGES ON *.* TO '$email'@'%' WITH GRANT OPTION;"; 
+					//$sql3 = "GRANT ALL PRIVILEGES ON `pisid`.* TO '$email'@'%' IDENTIFIED BY '$hashed_password' WITH GRANT OPTION;";
+					$sql4 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Criar_Utilizador` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql5 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostrar_Outros_Users` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql6 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Substancias` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql7 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Passagem` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql8 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Odores` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql9 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Medicoes_Temperatura` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql10 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostrar_User` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql11 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Experiencia` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql12 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Suspend_User` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql13 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Alertas` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql13a = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`Mostra_Tipo_User` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql14 = "GRANT SELECT ON pisid.alerta TO '$email'@'%' WITH GRANT OPTION;";
+					$sql15 = "GRANT SELECT ON pisid.experiencia TO '$email'@'%' WITH GRANT OPTION;";
+					$sql16 = "GRANT SELECT ON pisid.medicoespassagens TO '$email'@'%' WITH GRANT OPTION;";
+					$sql17 = "GRANT SELECT ON pisid.medicoessalas TO '$email'@'%' WITH GRANT OPTION;";
+					$sql18 = "GRANT SELECT ON pisid.medicoestemperatura TO '$email'@'%' WITH GRANT OPTION;";
+					$sql19 = "GRANT SELECT ON pisid.odoresexperiencia TO '$email'@'%' WITH GRANT OPTION;";
+					$sql20 = "GRANT SELECT ON pisid.substanciaexperiencia TO '$email'@'%' WITH GRANT OPTION;";
+					$sql21 = "GRANT SELECT ON pisid.utilizador TO '$email'@'%' WITH GRANT OPTION;";
+					$sql22 = "REVOKE ALL PRIVILEGES ON *.* FROM '$email'@'%';";
+					$sql23 = "GRANT ALL PRIVILEGES ON *.* TO '$email'@'%' REQUIRE NONE WITH GRANT OPTION MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;";
+
+					$conn2->query($sql1);
+					$conn2->query($sql2);
+					//$conn2->query($sql3);
+					$conn2->query($sql4);
+					$conn2->query($sql5);
+					$conn2->query($sql6);
+					$conn2->query($sql7);
+					$conn2->query($sql8);
+					$conn2->query($sql9);
+					$conn2->query($sql10);
+					$conn2->query($sql11);
+					$conn2->query($sql12);
+					$conn2->query($sql13);
+					$conn2->query($sql13a);
+					$conn2->query($sql14);
+					$conn2->query($sql15);
+					$conn2->query($sql16);
+					$conn2->query($sql17);
+					$conn2->query($sql18);
+					$conn2->query($sql19);
+					$conn2->query($sql20);
+					$conn2->query($sql21);
+					$conn2->query($sql22);
+					$conn->query($sql23);
 		
-			}else if (isset($tipo) && $tipo === "ADM") {
+
+		
+			}else if (isset($tipo) && $tipo === "INV") {
 				echo "criaste um adm";
 				// faça algo se $tipo for "INV"
+
+				$sql = "CALL criar_Utilizador('$nome','$telefone','$tipo','$email')";
+				$result = $conn->query($sql);
+
+				$conn2 = new mysqli($servername, $username, $password, "");
+				$sql1 = "CREATE USER '$email'@'%' IDENTIFIED BY '$pass';";
+				$sql2 = "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, SHOW DATABASES, CREATE VIEW, EVENT, TRIGGER, SHOW VIEW, ALTER ROUTINE, EXECUTE ON *.* TO '$email'@'%'";
+				
+				$sql3 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Criar_Experiencia` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql4 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Cria_Subs` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql5 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Cria_Odor` TO '$email'@'%' WITH GRANT OPTION;";
+				
+				$sql6 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Substancias` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql7 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Passagem` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql8 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Odores` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql9 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Medicoes_Temperatura` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql10 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Experiencia` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql11 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Alertas` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql12a = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getSalas` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql12b = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getLastExperiencia` TO '$email'@'%';";
+				$sql12c = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getSumRats` TO '$email'@'%';";
+				$sql12d = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getNumSalas` TO '$email'@'%';";
+				$sql2e = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`verifyExperiencia` TO '$email'@'%';";
+				$sql12 = "GRANT SELECT ON pisid.alerta TO '$email'@'%' WITH GRANT OPTION;";
+				$sql13 = "GRANT SELECT ON pisid.experiencia TO '$email'@'%' WITH GRANT OPTION;";
+				$sql14 = "GRANT SELECT ON pisid.medicoespassagens TO '$email'@'%' WITH GRANT OPTION;";
+				$sql15 = "GRANT SELECT ON pisid.medicoessalas TO '$email'@'%' WITH GRANT OPTION;";
+				$sql16 = "GRANT SELECT ON pisid.medicoestemperatura TO '$email'@'%' WITH GRANT OPTION;";
+				$sql17 = "GRANT SELECT ON pisid.odoresexperiencia TO '$email'@'%' WITH GRANT OPTION;";
+				$sql18 = "GRANT SELECT ON pisid.substanciaexperiencia TO '$email'@'%' WITH GRANT OPTION;";
+
+
+				$conn2->query($sql1);
+				$conn2->query($sql2);
+				$conn2->query($sql3);
+				$conn2->query($sql4);
+				$conn2->query($sql5);
+				$conn2->query($sql6);
+				$conn2->query($sql7);
+				$conn2->query($sql8);
+				$conn2->query($sql9);
+				$conn2->query($sql10);
+				$conn2->query($sql11);
+				$conn2->query($sql12);
+				$conn2->query($sql12a);
+				$conn2->query($sql12b);
+				$conn2->query($sql12c);
+				$conn2->query($sql12d);
+				$conn2->query($sql12e);
+				$conn2->query($sql13);
+				$conn2->query($sql14);
+				$conn2->query($sql15);
+				$conn2->query($sql16);
+				$conn2->query($sql17);
+				$conn2->query($sql18);
+
 			}else if (isset($tipo) && $tipo === "TEC") {
 				// faça algo se $tipo for "INV"
 				echo "criaste um tec";
+
+				$sql = "CALL criar_Utilizador('$nome','$telefone','$tipo','$email')";
+				$result = $conn->query($sql);
+
+				$conn2 = new mysqli($servername, $username, $password, "");
+				$sql1 = "CREATE USER '$email'@'%' IDENTIFIED BY '$pass';";
+				$sql2 = "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, SHOW DATABASES, CREATE VIEW, EVENT, TRIGGER, SHOW VIEW, ALTER ROUTINE, EXECUTE ON *.* TO '$email'@'%'";
+
+				$sql6 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Substancias` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql7 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Passagem` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql8 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Odores` TO '$email'@'%' WITH GRANT OPTION;";
+				$sql9 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Medicoes_Temperatura` TO '$email'@'%' WITH GRANT OPTION;";
+
+
+				$sql13 = "GRANT SELECT ON pisid.alerta TO '$email'@'%' WITH GRANT OPTION;";
+				$sql14 = "GRANT SELECT ON pisid.experiencia TO '$email'@'%' WITH GRANT OPTION;";
+				$sql15 = "GRANT SELECT ON pisid.medicoespassagens TO '$email'@'%' WITH GRANT OPTION;";
+				$sql16 = "GRANT SELECT ON pisid.medicoessalas TO '$email'@'%' WITH GRANT OPTION;";
+				$sql17 = "GRANT SELECT ON pisid.medicoestemperatura TO '$email'@'%' WITH GRANT OPTION;";
+				$sql18 = "GRANT SELECT ON pisid.odoresexperiencia TO '$email'@'%' WITH GRANT OPTION;";
+				$sql19 = "GRANT SELECT ON pisid.substanciaexperiencia TO '$email'@'%' WITH GRANT OPTION;";
+
+
+
+				
+				$conn2->query($sql1);
+				$conn2->query($sql2);
+				$conn2->query($sql6);
+				$conn2->query($sql7);
+				$conn2->query($sql8);
+				$conn2->query($sql9);
+				$conn2->query($sql13);
+				$conn2->query($sql14);
+				$conn2->query($sql15);
+				$conn2->query($sql16);
+				$conn2->query($sql17);
+				$conn2->query($sql18);
+				$conn2->query($sql19);
+
 			}
 			
 			
-			
+			$conn2->close();
 		
-		
-		
-		}
+		}else if(isset($_POST['detalhes'])){
+			$id = $_POST['detalhes'];
+			session_start();
+			$_SESSION['id'] = $_POST['detalhes'];
+			header("Location: detalhes.php");
+
+	}
 		?>
 </body>
 </html>
