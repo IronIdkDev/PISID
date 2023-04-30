@@ -17,9 +17,9 @@
       <h1>Comportamento dos ratos</h1>
 
       <form method="post" action="login.php">
-        <label for="username">Nome de usuário:</label>
+        <label for="username">Nome de utilizador:</label>
         <input type="text" id="username" name="username">
-        <label for="password">Senha:</label>
+        <label for="password">Password:</label>
         <input type="password" id="password" name="password">
         <input type="submit" value="Login">
       </form>
