@@ -13,8 +13,6 @@ import java.util.Random;
 public class writeToMQTT {
     private static final MqttClient mqttclient;
     private static final String BROKER_URL = "tcp://localhost:1883";
-    private volatile static boolean sendingData = true;
-    private static final Object lock = new Object();
 
     static {
         try {
@@ -28,16 +26,9 @@ public class writeToMQTT {
         try {
             MqttMessage mqtt_message = new MqttMessage();
             mqtt_message.setPayload(message.getBytes());
-            mqttclient.connect();
             mqttclient.publish(topic, mqtt_message);
         } catch (MqttException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                mqttclient.disconnect();
-            } catch (MqttException e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -48,6 +39,14 @@ public class writeToMQTT {
         double temperature = 9;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
         Random rand = new Random(123456789);
+
+        // Create the MQTT client
+        try {
+            mqttclient.connect();
+        } catch (MqttException e) {
+            e.printStackTrace();
+            return;
+        }
 
         // Create the JFrame and buttons
         JFrame frame = new JFrame("Write to MQTT");
@@ -67,12 +66,9 @@ public class writeToMQTT {
         frame.setVisible(true);
         frame.setLocationRelativeTo(null);
 
-        stopButton.addActionListener(e -> stopSendingData());
-        startButton.addActionListener(e -> startSendingData());
-
         // Start sending data
-        while (sendingData) {
-            if (rand.nextDouble() < 0.2) {
+        while (true) {
+            if (rand.nextDouble() < 0.05) {
                 endExperience(mov_topic, formatter);
             } else {
                 sendMovementData(mov_topic, rand, formatter, textArea);
@@ -87,13 +83,6 @@ public class writeToMQTT {
         }
     }
 
-    private static void stopSendingData() {
-        sendingData = false;
-    }
-
-    private static void startSendingData() {
-        sendingData = true;
-    }
 
     private static void endExperience(String topic, DateTimeFormatter formatter) {
         LocalDateTime now = LocalDateTime.now();
@@ -134,13 +123,6 @@ public class writeToMQTT {
         textArea.append(temp_msg2 + "\n");
         publishSensor(topic, temp_msg1);
         publishSensor(topic, temp_msg2);
-    }
-
-    // Method to notify the thread to resume execution
-    public static void resumeSendingData() {
-        synchronized (lock) {
-            lock.notifyAll();
-        }
     }
 
 }
