@@ -1,71 +1,66 @@
 package experiment.mice;
 
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.logging.Level;
+import java.io.File;
 import java.util.logging.Logger;
 
 public class MongoToMqtt {
 
-    // MQTT broker URL
+    private static final Logger logger = Logger.getLogger(ReadFromMQTTToMongoDB.class.getName());
+    private static final MqttClient mqttclient;
     private static final String BROKER_URL = "tcp://localhost:1883";
-
-    // MQTT topic to publish data to
-    private static final String MQTT_TOPIC = "replicaset-data";
-
-    // MQTT topic for movement data
-    private static String cloudTopicMov = "pisid_mazemov";
-    // MQTT topic for temperature data
-    private static String cloudTopicTemp = "pisid_mazetemp";
-    // MQTT topic for Outliers Data
-    private static String outliersTopic = "pisid_outliers";
-
-    // MongoDB database name
-    private static final String DB_NAME = "sensores";
-
     // MongoDB collections to read data from
     private static final String[] COLLECTIONS = {"Outliers", "SensoresMovimento", "SensoresTemperatura"};
-    private static final Logger logger = Logger.getLogger(MongoToMqtt.class.getName());
 
-    private final JTextArea documentLabel;
 
-    private MongoToMqtt() {
-        documentLabel = new JTextArea("\n");
-    }
-
-    private void createWindow() {
-        JFrame frame = new JFrame("Mongo To MQTT");
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
-        JLabel label = new JLabel("Data sent to broker: ", SwingConstants.CENTER);
-        label.setPreferredSize(new Dimension(600, 30));
-
-        JScrollPane scrollPane = new JScrollPane(documentLabel, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-        scrollPane.setPreferredSize(new Dimension(600, 200));
-
-        JButton button = new JButton("Stop the program");
-        button.addActionListener(e -> System.exit(0));
-
-        frame.getContentPane().add(label, BorderLayout.NORTH);
-        frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
-        frame.getContentPane().add(button, BorderLayout.SOUTH);
-
-        frame.setLocationRelativeTo(null);
-        frame.pack();
-        frame.setVisible(true);
+    static {
+        try {
+            mqttclient = new MqttClient(BROKER_URL, MqttClient.generateClientId(), new MqttDefaultFilePersistence(System.getProperty("user.dir") + File.separator+ "tmp"));
+        } catch (MqttException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void main(String[] args) {
-        MongoToMqtt mongoToMqtt = new MongoToMqtt();
-        mongoToMqtt.createWindow();
-        //mongoToMqtt.connectToMqttServer(BROKER_URL, cloudTopicMov, cloudTopicTemp);
-        //cloudToMongo.connectMongo();
+        String mov_data = "mongo_mov_data";
+        String temp_data = "mongo_mov_data";
+
+        // Create the MQTT client
+        try {
+            mqttclient.connect();
+        } catch (MqttException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        JTextArea textArea = getjTextArea();
+
     }
+
+    private static JTextArea getjTextArea() {
+        // Create the JFrame and buttons
+        JFrame frame = new JFrame("Write to MQTT");
+        JTextArea textArea = new JTextArea(20, 100);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        frame.getContentPane().add(new JScrollPane(textArea), BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton stopButton = new JButton("Stop Sending Data");
+        JButton startButton = new JButton("Start Sending Data");
+        buttonPanel.add(stopButton);
+        buttonPanel.add(startButton);
+        frame.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+
+        frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+        frame.setLocationRelativeTo(null);
+        return textArea;
+    }
+
 }

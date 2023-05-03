@@ -51,6 +51,26 @@ public class writeToMQTT {
             return;
         }
 
+        JTextArea textArea = getjTextArea();
+
+        // Start sending data
+        while (true) {
+            if (rand.nextDouble() < 0.05) {
+                endExperience(mov_topic, formatter);
+            } else {
+                sendMovementData(mov_topic, rand, formatter, textArea);
+                sendTemperatureData(temp_topic, rand, formatter, sensorId, temperature, textArea);
+                temperature = rand.nextDouble() * 10;
+            }
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private static JTextArea getjTextArea() {
         // Create the JFrame and buttons
         JFrame frame = new JFrame("Write to MQTT");
         JTextArea textArea = new JTextArea(20, 100);
@@ -68,22 +88,7 @@ public class writeToMQTT {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
         frame.setLocationRelativeTo(null);
-
-        // Start sending data
-        while (true) {
-            if (rand.nextDouble() < 0.05) {
-                endExperience(mov_topic, formatter);
-            } else {
-                sendMovementData(mov_topic, rand, formatter, textArea);
-                sendTemperatureData(temp_topic, rand, formatter, sensorId, temperature, textArea);
-                temperature = rand.nextDouble() * 10;
-            }
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
+        return textArea;
     }
 
 
