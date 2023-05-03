@@ -1,0 +1,16 @@
+
+g	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(Ò‚Òéüÿÿÿÿ8à™Àü0
+m	java:S117"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(İ‰ê­8ô“¹äı0
+r	java:S117$"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ø¥§Ûüÿÿÿÿ8šãàäı0
+r	java:S117%"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ìä‹ãÿÿÿÿÿ8›ãàäı0
+m	java:S117Y"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(®Ú¡8â™Àü0
+r	java:S117a"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(™Æüæşÿÿÿÿ8ã™Àü0
+m	java:S117x"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(½Ÿè8ã™Àü0
+r	java:S117y"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ñöúÿÿÿÿ8ã™Àü0
+n	java:S101"MRename this class name to match the regular expression '^[A-Z][a-zA-Z0-9]*$'.(†“ö‘øÿÿÿÿ8å™Àü0
+D
+java:S2189F""Add an end condition to this loop.(˜ïˆÿÿÿÿÿ8şãàäı0
+f
+java:S3252A"IUse static access with "javax.swing.WindowConstants" for "EXIT_ON_CLOSE".(¢¡´8—äàäı0
+Q
+java:S1172f"/Remove this unused method parameter "sensorId".(—¬¸ÿÿÿÿÿ8Û›Àü0
