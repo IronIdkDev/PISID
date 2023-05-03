@@ -22,7 +22,6 @@
 	?>
 
 <title>Página de Investigador</title>
-    	<!-- Inclui o ficheiro CSS para o tema de Ratos -->
     	<link rel="stylesheet" type="text/css" href="ratos.css">
 
 </head>
@@ -45,7 +44,7 @@
 </form>
 
 <form method = "post">
-<input type="submit" name="avancar" value="avancar">
+<input type="submit" name="avancar" value="Avançar">
 </form>
 
 </body>
@@ -59,56 +58,37 @@ if(isset($_POST['adicionar'])) {
     $codigoSub = $_POST['codigoSub'];
 
 
-// Define o nome da função que você quer chamar
+// Representa o nome da function que será chamada
 $functionName = "getLastExperiencia";
-
-// Prepara a chamada da função
+//Prepara a function para ser chamada
 $stmt = $conn->prepare("SELECT $functionName(?) AS resultado");
-
 // Define o valor do parâmetro da função
 $stmt->bind_param('s', $username);
-
-// Executa a consulta
+// Executa a function
 $stmt->execute();
-
-// Obtém o resultado da consulta
+// Recebe o resultado retornado pela function
 $result = $stmt->get_result();
-
-// Obtém o valor retornado pela função
+// Guarda o resultado retornado pela function
 $id = $result->fetch_assoc()['resultado'];
 
-
-
-// Define o nome da função que você quer chamar
-$functionName1 = "getSumRats";
-
-// Prepara a chamada da função
-$stmt1 = $conn->prepare("SELECT $functionName1(?) AS soma");
-
-// Define o valor do parâmetro da função
-$stmt1->bind_param('s', $id);
-
-// Executa a consulta
-$stmt1->execute();
-
-// Obtém o resultado da consulta
-$result1 = $stmt1->get_result();
-
-// Obtém o valor retornado pela função
-$nRatos = $result1->fetch_assoc()['soma'];
-
-if(($nRatos + $ratosAux) >= $ratos){
-    $ratosAux = $ratos-$nRatos;
-    $sql = "CALL Cria_Subs('$ratosAux','$codigoSub','$id');";
-    $conn->query($sql);
-    header("Location: odores.php");	
-}else {
-
-    $nRatos += $ratosAux;
 $sql = "CALL Cria_Subs('$ratosAux','$codigoSub','$id');";
+
+//Verifica se o valor inserido no formulário é superior ao valor de ratos que faltam admistrar substâncias
+if($ratosAux > $ratos){
+
+echo"<script>alert(\"ERRO! O número inserido é superior ao permitido! Preencha novamente ou clique em Avançar\");
+</script>";
+
+}else if ($ratosAux == $ratos){
+    $conn->query($sql);
+    header("Location: odores.php");
+
+}else{
+
 $conn->query($sql);
 
 $_SESSION['numeroRatos'] = $ratos - $ratosAux;
+//Faz um refresh à página para mostrar o valor de $ratos estar atualizado
 header("refresh:0.1");
 
 }

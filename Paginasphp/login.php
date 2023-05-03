@@ -15,7 +15,7 @@ try {
 
   // Verifica a conexão
   if ($conn->connect_error) {
-      throw new Exception("Usuário ou senha inválidos.");
+      throw new Exception("Utilizador ou password incorretos.");
   }
 
   $nome = $conn->query("SELECT UserName('$user') AS nome");      
@@ -29,7 +29,7 @@ try {
   $_SESSION['dbname'] = $dbname;
   $_SESSION['nome'] = $name;
 
- // Consulta o banco de dados para verificar se o utilizador está correto
+ // Consulta a base de dados para verificar se o utilizador está correto
  $sql = "CALL Mostrar_User('$user');";
  $result = $conn->query($sql) or die(mysqli_error($conn));
  
@@ -54,8 +54,8 @@ if ($result->num_rows == 1 ) {
         }
     }
 } else {
-    // Se o utilizador não existe, mostra uma mensagem de erro
-    throw new Exception("Usuário ou senha inválidos.");
+    // Se o utilizador não existir, mostra uma mensagem de erro
+    throw new Exception("Utilizador não existe!");
 }
 
   // Termina a conexão
