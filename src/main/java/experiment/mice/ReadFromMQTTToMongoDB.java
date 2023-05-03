@@ -19,6 +19,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private DBCollection mongocolmov;
     private DBCollection mongocoltemp;
     private DBCollection mongocolout;
+    private DBCollection mongocolwrong;
     private static String mongoUser = "root";
     private static String mongoPassword = "testesenha";
     private static String mongoAddress = "localhost:27015,localhost:25015,localhost:23015";
@@ -30,6 +31,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static final String MONGOCOLLECTIONMOV = "SensoresMovimento";
     private static final String MONGOCOLLECTIONTEMP = "SensoresTemperatura";
     private static final String MONGOCOLLECTIONOUT = "Outliers";
+    private static final String MONGOCOLLECTIONWRONG = "Wrong Values";
     private ArrayList<Double> tempValues = new ArrayList<>();
 
 
@@ -120,6 +122,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         mongocoltemp = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONTEMP);
         mongocolmov = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONMOV);
         mongocolout = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONOUT);
+        mongocolwrong = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONWRONG);
     }
 
     @Override
@@ -135,7 +138,16 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
                 mongocolmov.insert(document_json);
             }
         } catch (JSONParseException | NumberFormatException e) {
-            logError(e);
+            try {
+                String messageString = new String(message.getPayload());
+                mongocolwrong.insert(new BasicDBObject("topic", topic)
+                        .append("message", messageString));
+                logger.log(Level.INFO, "Wrong Value detected! Inserted into the wrong values collection");
+            } catch (Exception ex) {
+                logger.log(Level.SEVERE, "Error while inserting wrong value into MongoDB: " + ex.getMessage(), ex);
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, "Error while processing message: " + ex.getMessage(), ex);
         }
     }
 
