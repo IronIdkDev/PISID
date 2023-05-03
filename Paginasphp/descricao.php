@@ -20,7 +20,6 @@
 	?>
 
 	<title>Página de Investigador</title>
-    	<!-- Inclui o ficheiro CSS para o tema de Ratos -->
     	<link rel="stylesheet" type="text/css" href="ratos.css">
     </head>
 
@@ -45,8 +44,4 @@ header("Location: homeINV.php");
 }
 
 ?>
-
-
-
-
 </html>

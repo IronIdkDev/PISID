@@ -17,25 +17,25 @@
         if ($conn->connect_error) {
             die("Conexão falhou: " . $conn->connect_error);
         }
-// Define o nome da função que você quer chamar
+// Nome da function que será usada
 $functionName = "getLastExperiencia";
 
-// Prepara a chamada da função
+// Prepara a function para ser chamada
 $stmt = $conn->prepare("SELECT $functionName(?) AS resultado");
 
 // Define o valor do parâmetro da função
 $stmt->bind_param('s', $username);
 
-// Executa a consulta
+// Executa a function
 $stmt->execute();
 
-// Obtém o resultado da consulta
+// Guarda o valor retornado pela function
 $result = $stmt->get_result();
 
-// Obtém o valor retornado pela função
+// Guarda numa variável o valor da function
 $id = $result->fetch_assoc()['resultado'];
 
-
+//Mesma coisa que acima mas agora com o número das salas. É basicamente igual ao que é usado na página ratos.php
 
 $function = "getNumSalas";
 $stmt1 = $conn->prepare("SELECT $function(?) AS resultado");
@@ -85,16 +85,21 @@ $odor = $_POST['odor'];
 
 $sql = "CALL Cria_Odor('$sala','$id','$odor' )";
 
-if (mysqli_query($conn, $sql)) {
-    echo "Dados inseridos com sucesso.";
-    header("refresh:0.1");
-} else {
-    $erro = mysqli_error($conn);
-    $mensagem_erro = substr($erro, 0, strpos($erro, ' in'));
+//Se o valor inserido no formulário for superior ao número de salas então devolve um erro pop-up
+if($sala < $num){
 
-    echo $mensagem_erro; // exibe somente a mensagem de erro desejada
+    $conn->query($sql);
+    echo"<h4>Dados inseridos com sucesso</h4>";
+    header("refresh: 0.1");
+}else if($sala == $num ){
+    $conn->query($sql);
+    echo"<h4>Dados inseridos com sucesso</h4>";
+    header("Location: homeINV.php");
+
+}else{
+    echo"<script>alert(\"ERRO! O número inserido é superior ao permitido! Preencha novamente ou clique em Concluído\");
+</script>";
 }
-
 
 
 }else if(isset($_POST['Concluído'])) {

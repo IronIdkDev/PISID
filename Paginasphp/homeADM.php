@@ -14,7 +14,6 @@ $name = $_SESSION['nome'];
 ?>
 
 	<title>Página de ADM</title>
-	<!-- Inclui o ficheiro CSS para o tema de Ratos -->
 	<link rel="stylesheet" type="text/css" href="ratos.css">
 </head>
 <body>
@@ -41,7 +40,7 @@ if ($conn->connect_error) {
 			$sql = "SELECT * FROM experiencia;";
 			$result = $conn->query($sql);
 
-			// Se a consulta retornar resultados, mostrar numa tabela
+			// Se a consulta retornar resultados, mostra numa tabela
 			if ($result->num_rows > 0) {
 				echo "<table>";
 				echo "<tr><th>IDExperiência</th><th>Descrição</th><th>Data e Hora</th><th>Número de Ratos</th><th>Limite de Ratos por Sala</th><th>Segundos sem movimento</th><th>Temperatura Ideal</th><th>Variação Máxima da Temperatura </th><th>Ativa(1=Sim, 0 = Não)</th><th>Detalhes da experiência</th></tr>";
@@ -60,7 +59,7 @@ if ($conn->connect_error) {
 			$sql = "CALL Mostrar_Outros_Users('$username')";
 			$result = $conn->query($sql);
 			
-			// Se a consulta retornar resultados, mostrar numa tabela
+			// Se a consulta retornar resultados, mostra numa tabela
 			if ($result->num_rows > 0) {
 				echo "<table>";
 				echo "<tr><th>Nome </th><th>Email</th><th>Número de Telefone</th><th>Tipo de utilizador</th><th>Ativo(1=Sim, 0 = Não)</th><th>Desativar/Ativar utilizador</th><th>Ver perfil</th></tr>";
@@ -105,43 +104,41 @@ if ($conn->connect_error) {
 
 
 
-
+		//Termina a sessão do utilizador	
 		}else if(isset($_POST['logout'])) {
 			session_unset();
 			session_destroy();
 			header('Location: loginPage.php');
-
 			exit();
+		//Muda o estado do utilizador selecionado	
 		}else if(isset($_POST["submitEstado"])) {
 			$emailUtilizador = $_POST["emailUtilizador"];
 			$sql = "CALL Suspend_User('$emailUtilizador');";
 			$result = $conn->query($sql);
 
 		
-		
+		//Permite criar um novo utilizador
 		}else if (isset($_POST["formulario"])) {
-			echo "ENTREI NO IF ";
 			$nome = $_POST["nome"];
 			$pass = $_POST["password"];
 			$email = $_POST["email"];
 			$telefone = $_POST["telefone"];
 			$tipo = $_POST["tipo"];
 
-			
+			//Conjunto de verificações que, dependendo do tipo do utilizador, são lhe dadas privilégios diferentes
 			if (isset($tipo) && $tipo === "ADM") {
-				echo "Criaste um inventor";
 				$sql = "CALL criar_Utilizador('$nome','$telefone','$tipo','$email')";
 				$result = $conn->query($sql);
 
 					// Cria a conexão
-					//$conn2 = new mysqli($servername, "root", "", "");
 					$conn2 = new mysqli($servername, $username, $password, "");
+					if ($conn2->connect_error) {
+						die("Conexão falhou: " . $conn2->connect_error);
+					}
 
-
-					//$sql1 = "CREATE USER '$email'@'%' IDENTIFIED VIA mysql_native_password USING '$hashed_password';GRANT ALL PRIVILEGES ON *.* TO '$email'@'%' REQUIRE NONE WITH GRANT OPTION MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;GRANT ALL PRIVILEGES ON `pisid`.* TO '$email'@'%';";
+					//Conjunto de privilégios dados aos utilizadores ADM	
 					$sql1 = "CREATE USER '$email'@'%' IDENTIFIED BY '$pass';";
 					$sql2 = "GRANT ALL PRIVILEGES ON *.* TO '$email'@'%' WITH GRANT OPTION;"; 
-					//$sql3 = "GRANT ALL PRIVILEGES ON `pisid`.* TO '$email'@'%' IDENTIFIED BY '$hashed_password' WITH GRANT OPTION;";
 					$sql4 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Criar_Utilizador` TO '$email'@'%' WITH GRANT OPTION;";
 					$sql5 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostrar_Outros_Users` TO '$email'@'%' WITH GRANT OPTION;";
 					$sql6 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Substancias` TO '$email'@'%' WITH GRANT OPTION;";
@@ -166,7 +163,6 @@ if ($conn->connect_error) {
 
 					$conn2->query($sql1);
 					$conn2->query($sql2);
-					//$conn2->query($sql3);
 					$conn2->query($sql4);
 					$conn2->query($sql5);
 					$conn2->query($sql6);
@@ -192,13 +188,13 @@ if ($conn->connect_error) {
 
 		
 			}else if (isset($tipo) && $tipo === "INV") {
-				echo "criaste um adm";
-				// faça algo se $tipo for "INV"
 
 				$sql = "CALL criar_Utilizador('$nome','$telefone','$tipo','$email')";
 				$result = $conn->query($sql);
 
 				$conn2 = new mysqli($servername, $username, $password, "");
+
+				//Privilégios dados aos INV
 				$sql1 = "CREATE USER '$email'@'%' IDENTIFIED BY '$pass';";
 				$sql2 = "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, SHOW DATABASES, CREATE VIEW, EVENT, TRIGGER, SHOW VIEW, ALTER ROUTINE, EXECUTE ON *.* TO '$email'@'%'";
 				
@@ -216,7 +212,7 @@ if ($conn->connect_error) {
 				$sql12b = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getLastExperiencia` TO '$email'@'%';";
 				$sql12c = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getSumRats` TO '$email'@'%';";
 				$sql12d = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getNumSalas` TO '$email'@'%';";
-				$sql2e = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`verifyExperiencia` TO '$email'@'%';";
+				$sql12e = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`verifyExperiencia` TO '$email'@'%';";
 				$sql12 = "GRANT SELECT ON pisid.alerta TO '$email'@'%' WITH GRANT OPTION;";
 				$sql13 = "GRANT SELECT ON pisid.experiencia TO '$email'@'%' WITH GRANT OPTION;";
 				$sql14 = "GRANT SELECT ON pisid.medicoespassagens TO '$email'@'%' WITH GRANT OPTION;";
@@ -251,13 +247,13 @@ if ($conn->connect_error) {
 				$conn2->query($sql18);
 
 			}else if (isset($tipo) && $tipo === "TEC") {
-				// faça algo se $tipo for "INV"
-				echo "criaste um tec";
 
 				$sql = "CALL criar_Utilizador('$nome','$telefone','$tipo','$email')";
 				$result = $conn->query($sql);
 
 				$conn2 = new mysqli($servername, $username, $password, "");
+
+				//Privilégios dados aos TEC
 				$sql1 = "CREATE USER '$email'@'%' IDENTIFIED BY '$pass';";
 				$sql2 = "GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, SHOW DATABASES, CREATE VIEW, EVENT, TRIGGER, SHOW VIEW, ALTER ROUTINE, EXECUTE ON *.* TO '$email'@'%'";
 
@@ -296,7 +292,7 @@ if ($conn->connect_error) {
 			
 			
 			$conn2->close();
-		
+		//Leva à página de detalhes de uma experiência	
 		}else if(isset($_POST['detalhes'])){
 			$id = $_POST['detalhes'];
 			session_start();

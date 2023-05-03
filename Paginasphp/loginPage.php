@@ -3,16 +3,8 @@
   <head>
     <title>Página de login</title>
     <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="script.js"></script>
   </head>
   <body class="login">
-    <?php
-      session_start(); // inicia a sessão
-      if (isset($_SESSION["error"])) { // verifica se a variável de sessão existe
-        echo "<p style='color:red'>" . $_SESSION["error"] . "</p>"; // mostra a mensagem de erro em vermelho
-        unset($_SESSION["error"]); // remove a variável de sessão
-      }
-    ?>
     <div class="container">
       <h1>Comportamento dos ratos</h1>
 
@@ -23,6 +15,13 @@
         <input type="password" id="password" name="password">
         <input type="submit" value="Login">
       </form>
+      <?php
+      session_start(); // inicia a sessão
+      if (isset($_SESSION["error"])) { // verifica se a variável de sessão existe
+        echo "<p style='color:red'> Nome de utilizador ou password incorretos. Tente novamente. </p>"; // mostra a mensagem de erro em vermelho
+        unset($_SESSION["error"]); // remove a variável de sessão
+      }
+    ?>
     </div>
   </body>
 </html>

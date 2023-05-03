@@ -15,7 +15,6 @@ $id = $_SESSION['id'];
 ?>
 
 <title>Página de Experiência</title>
-	<!-- Inclui o ficheiro CSS para o tema de Ratos -->
 	<link rel="stylesheet" type="text/css" href="ratos.css">
 </head>
 <body>
@@ -42,7 +41,7 @@ if ($conn->connect_error) {
             $sql = "CALL Mostra_Passagem('$id');";
             $result = $conn->query($sql);
 
-			// Se a consulta retornar resultados, mostrar numa tabela
+			// Se a consulta retornar resultados, mostra numa tabela
 			if ($result->num_rows > 0) {
 			?>
 			<h1>Tabela de Passagens</h1>
@@ -54,6 +53,8 @@ if ($conn->connect_error) {
 					echo "<tr><td>" . $row["IdMedicao"] . "</td><td>" . $row["Hora"] . "</td><td>" . $row["SalaEntrada"] . "</td><td>" . $row["SalaSaida"] . "</td>" . "</tr>";
 				}
 				echo "</table>";
+			}else {
+				echo"Não foram encontrados dados de passagens relativo a esta experiência";
 			}
 
 
@@ -78,6 +79,8 @@ if ($conn->connect_error) {
                 echo "<tr><td>" . $row1["Sala"] . "</td><td>" . $row1["CodigoOdor"] . "</td></tr>";
                 }
                 echo "</table>";
+			}else {
+				echo"Não foram encontrados dados de odores relativo a esta experiência";
 			}
 
 			while ($conn->next_result()) {
@@ -99,6 +102,9 @@ if ($conn->connect_error) {
                 echo "<tr><td>" . $row["NumeroRatos"] . "</td><td>" . $row["CodigoSubstancia"] . "</td></tr>";
                 }
                echo "</table>";
+			}else {
+				echo"Não foram encontrados dados de substâncias relativo a esta experiência";
+
 			}
 			while ($conn->next_result()) {
 				if ($res = $conn->store_result()) {
@@ -119,7 +125,8 @@ if ($conn->connect_error) {
                 }
                echo "</table>";
 			} else {
-				echo "Não foram encontrados resultados.";
+				echo"Não foram encontrados alertas relativo a esta experiência";
+
 			}
 
 			// Fecha a conexão

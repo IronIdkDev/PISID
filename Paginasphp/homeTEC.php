@@ -13,7 +13,6 @@
 
 	<title>Página de TEC</title>
 
-	<!-- Inclui o ficheiro CSS para o tema de Ratos -->
 	<link rel="stylesheet" type="text/css" href="ratos.css">
 </head>
 
@@ -22,10 +21,16 @@
 
 	<form method="post">
 		<label for="idExperiencia">ID de Experiência:</label>
-		<input type="number" name="idExperiencia" id="idExperiencia" required>
+		<input type="number" name="idExperiencia" id="idExperiencia">
 		<input type="submit" name="submitTemperatura" value="Mostrar medições de temperatura">
-		<input type="submit" name="submitMovimento" value="Mostrar medições de movimento">
+		<input type="submit" name="submitMovimento" value="Mostrar medições de movimento" onclick="limparFormulario()">
 	</form>
+	<script>
+  // Função para limpar os dados do formulário
+  function limparFormulario() {
+    document.getElementById("idExperiencia").reset();
+  }
+</script>
 	<form method="post">
     <input type="submit" name="logout" value="Logout">
 </form>
@@ -39,19 +44,23 @@
 		    die("Conexão falhou: " . $conn->connect_error);
 		}
 
-		// Realizar a consulta 
+		// Realizaa a consulta 
 		if(isset($_POST["submitTemperatura"])) {
-
-			// Obtém o valor inserido pelo usuário
-			$idExperiencia = $_POST["idExperiencia"];
-
-			$inteiro = intval($idExperiencia);
-
+			
+			//Se não for preenchido, irá mostrar todas as medições, caso seja colocado 0 mostra os dados que foram recolhidos durante o período sem experiências
+			if (!empty($_POST['idExperiencia'] || $_POST['idExperiencia'] == 0)) {
+				// Guarda o id experiência colocado no form
+				$idExperiencia = $_POST["idExperiencia"];
+				$inteiro = intval($idExperiencia);
+			}else{
+			// Transforma o valor inserido num int
+			$inteiro = -1;
+			}
 			// Consulta através de sql
 			$sql = "CALL Mostra_Medicoes_Temperatura('$inteiro');";
 			$result = $conn->query($sql);
 
-			// Se a consulta retornar resultados, mostrar numa tabela
+			// Se a consulta retornar resultados, mostra numa tabela
 			if ($result->num_rows > 0) {
 				echo "<table>";
 				echo "<tr><th>IDMedicao</th><th>Hora</th><th>Leitura</th><th>Sensor</th></tr>";
@@ -60,23 +69,25 @@
 				}
 				echo "</table>";
 			} else {
-				echo "Não foram encontrados resultados.";
+				echo "Não foram encontradas medições de temperatura referentes a uma experiência.";
 			}
-
-			// Fecha a conexão
-			$conn->close();
 		} else if(isset($_POST["submitMovimento"])) {
 
-			// Obtém o valor inserido pelo usuário
-			$idExperiencia = $_POST["idExperiencia"];
-
-			$inteiro = intval($idExperiencia);
+			//Se não for preenchido, irá mostrar todas as medições, caso seja colocado 0 mostra os dados que foram recolhidos durante o período sem experiências
+			if (!empty($_POST['idExperiencia'] || $_POST['idExperiencia'] == 0)) {
+				// Guarda o id experiência colocado no form
+				$idExperiencia = $_POST["idExperiencia"];
+				$inteiro = intval($idExperiencia);
+			}else{
+			// Transforma o valor inserido num int
+			$inteiro = -1;
+			}
 
 			// Consulta através de sql
 			$sql = "CALL Mostra_Passagem('$inteiro');";
 			$result = $conn->query($sql);
 
-			// Se a consulta retornar resultados, mostrar numa tabela
+			// Se a consulta retornar resultados, mostra numa tabela
 			if ($result->num_rows > 0) {
 				echo "<table>";
 				echo "<tr><th>IDMedicao</th><th>Hora</th><th>Sala de entrada</th><th>Sala de saída</th></tr>";
@@ -86,7 +97,7 @@
    				}
    				echo "</table>";
 			} else {
-   				echo "Não foram encontrados resultados.";
+   				echo "Não foram encontradas medições de movimento referentes a uma experiência";
 			}
 		}else if(isset($_POST['logout'])) {
 			session_unset();
