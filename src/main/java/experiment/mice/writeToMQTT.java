@@ -3,9 +3,11 @@ package experiment.mice;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
@@ -16,7 +18,7 @@ public class writeToMQTT {
 
     static {
         try {
-            mqttclient = new MqttClient(BROKER_URL, MqttClient.generateClientId());
+            mqttclient = new MqttClient(BROKER_URL, MqttClient.generateClientId(), new MqttDefaultFilePersistence(System.getProperty("user.dir") + File.separator+ "tmp"));
         } catch (MqttException e) {
             throw new RuntimeException(e);
         }
@@ -39,6 +41,7 @@ public class writeToMQTT {
         double temperature = 9;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
         Random rand = new Random(123456789);
+
 
         // Create the MQTT client
         try {
