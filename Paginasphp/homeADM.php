@@ -213,6 +213,15 @@ if ($conn->connect_error) {
 				$sql12c = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getSumRats` TO '$email'@'%';";
 				$sql12d = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getNumSalas` TO '$email'@'%';";
 				$sql12e = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`verifyExperiencia` TO '$email'@'%';";
+				
+				$sql12f = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Odores` TO '$email'@'%';";
+				$sql12h = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Salas` TO '$email'@'%';";
+				$sql12i = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Delete_Odor` TO '$email'@'%';";
+				$sql12j = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Delete_Sub` TO '$email'@'%';";
+				$sql12k = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Edita_Odor` TO '$email'@'%';";
+				$sql12l = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Editar_Sub` TO '$email'@'%';"; 
+				$sql12m = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getLimiteSalas` TO '$email'@'%';";
+
 				$sql12 = "GRANT SELECT ON pisid.alerta TO '$email'@'%' WITH GRANT OPTION;";
 				$sql13 = "GRANT SELECT ON pisid.experiencia TO '$email'@'%' WITH GRANT OPTION;";
 				$sql14 = "GRANT SELECT ON pisid.medicoespassagens TO '$email'@'%' WITH GRANT OPTION;";
@@ -239,6 +248,13 @@ if ($conn->connect_error) {
 				$conn2->query($sql12c);
 				$conn2->query($sql12d);
 				$conn2->query($sql12e);
+				$conn2->query($sql12f);
+				$conn2->query($sql12h);
+				$conn2->query($sql12i);
+				$conn2->query($sql12j);
+				$conn2->query($sql12k);
+				$conn2->query($sql12l);
+				$conn2->query($sql12m);
 				$conn2->query($sql13);
 				$conn2->query($sql14);
 				$conn2->query($sql15);
