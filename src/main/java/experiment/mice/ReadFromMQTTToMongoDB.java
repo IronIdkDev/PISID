@@ -4,9 +4,11 @@ import com.mongodb.*;
 import com.mongodb.util.JSON;
 import com.mongodb.util.JSONParseException;
 import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.security.SecureRandom;
 import java.util.logging.Logger;
@@ -85,7 +87,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         SecureRandom secureRandom = new SecureRandom();
         int clientId = secureRandom.nextInt(100000);
 
-        try (MqttClient mqttClient = new MqttClient(cloudServer, CLIENT_ID_PREFIX + clientId + "_" + cloudTopicMov)) {
+        try (MqttClient mqttClient = new MqttClient(cloudServer, CLIENT_ID_PREFIX + clientId + "_" + cloudTopicMov, new MqttDefaultFilePersistence(System.getProperty("user.dir") + File.separator+ "tmp"))) {
             mqttClient.connect();
             mqttClient.setCallback(this);
             try {
