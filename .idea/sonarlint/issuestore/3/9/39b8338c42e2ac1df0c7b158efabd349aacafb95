@@ -1,0 +1,34 @@
+
+P
+java:S1141j"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+s	java:S117’"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ôî¨êúÿÿÿÿ8Œàê·ş0
+N
+java:S2629Á"7Use the built-in formatting to construct this argument.(æÅ©ä
+S
+java:S2629á"7Use the built-in formatting to construct this argument.(º¯Ÿÿÿÿÿÿ
+`
+java:S2095‡"IUse try-with-resources or close this "MongoClient" in a "finally" clause.(Ø§˜è
+a
+java:S3457n"KFormat specifiers or lambda should be used instead of string concatenation.(İûÊÃ
+f
+java:S3457q"KFormat specifiers or lambda should be used instead of string concatenation.(ìïÜ«üÿÿÿÿ
+I
+java:S1874ˆ"-Remove this use of "getDB"; it is deprecated.(ÃÜÄŠıÿÿÿÿ
+O
+java:S1874’",Remove this use of "JSON"; it is deprecated.(Ôî¨êúÿÿÿÿ8Üàê·ş0
+]
+java:S1874›":Remove this use of "JSONParseException"; it is deprecated.(õæÏŞÿÿÿÿÿ8İàê·ş0
+R
+java:S3457¢"4Lambda should be used to defer string concatenation.(İŒÆ»8ßàê·ş0
+W
+java:S3457¥"4Lambda should be used to defer string concatenation.(ô™é‹ıÿÿÿÿ8ßàê·ş0
+b
+java:S3457Á"KFormat specifiers or lambda should be used instead of string concatenation.(æÅ©ä
+b
+java:S3457Ç"KFormat specifiers or lambda should be used instead of string concatenation.(ÁšÓß
+g
+java:S3457á"KFormat specifiers or lambda should be used instead of string concatenation.(º¯Ÿÿÿÿÿÿ
+J
+java:S1144©"3Remove this unused private "insertDocument" method.(çí³ª
+I
+java:S1144Æ"-Remove this unused private "logError" method.(ó¾‚ùøÿÿÿÿ
