@@ -5,8 +5,8 @@ import org.eclipse.paho.client.mqttv3.*;
 
 public class MqttToSql {
     private static final String BROKER_URL = "ssl://5893ab818d254bdf8af7ef32f0a96df1.s2.eu.hivemq.cloud:8883";
-    private static String mqttTopicMov = "SensoresMovimento";
-    private static String mqttTopicTemp = "SensoresTempertura";
+    private static String mqttTopicMov = "sensoresMov";
+    private static String mqttTopicTemp = "sensoresTemp";
     private static final String MQTT_USER = "pisid35";
     private static final String MQTT_PASSWORD = "35AhM0@a";
 
