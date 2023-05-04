@@ -157,9 +157,11 @@ public class WriteToMqtt {
         textArea.append(tempMsg2 + "\n");
         publishSensor(topic, tempMsg1);
         publishSensor(topic, tempMsg2);
-        String testMsg = HOUR_PREFIX + formatter.format(now) + "\", Leitura: 3@" + ' ' + SENSOR_PREFIX + 2 + "}";
-        textArea.append(testMsg + "\n");
-        publishSensor(topic, testMsg);
+        if(rand.nextDouble() > 0.95){
+            String testMsg = HOUR_PREFIX + formatter.format(now) + "\", Leitura: 3@" + ' ' + SENSOR_PREFIX + 2 + "}";
+            textArea.append(testMsg + "\n");
+            publishSensor(topic, testMsg);
+        }
     }
 
 }

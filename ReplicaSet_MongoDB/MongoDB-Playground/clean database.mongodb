@@ -2,6 +2,6 @@
 
 use ('sensores')
 
-db.Outliers.deleteMany({})
 db.SensoresMovimento.deleteMany({})
 db.SensoresTemperatura.deleteMany({})
+db.WrongValues.deleteMany({})

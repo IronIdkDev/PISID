@@ -19,7 +19,6 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static final Logger logger = Logger.getLogger(ReadFromMQTTToMongoDB.class.getName());
     private DBCollection mongocolmov;
     private DBCollection mongocoltemp;
-    private DBCollection mongocolout;
     private DBCollection mongocolwrong;
     private static String mongoUser = "root";
     private static String mongoPassword = "testesenha";
@@ -32,8 +31,9 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static final String MONGOCOLLECTIONMOV = "SensoresMovimento";
     private static final String MONGOCOLLECTIONTEMP = "SensoresTemperatura";
     private static final String MONGOCOLLECTIONOUT = "Outliers";
-    private static final String MONGOCOLLECTIONWRONG = "Wrong Values";
+    private static final String MONGOCOLLECTIONWRONG = "WrongValues";
     private ArrayList<Double> tempValues = new ArrayList<>();
+    private static final String OUTLIER = "Outlier";
 
 
     private final JTextArea documentLabel;
@@ -107,13 +107,12 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
                 mqttClient.subscribe(cloudTopicMov);
                 mqttClient.subscribe(cloudTopicTemp);
             } catch (MqttException e) {
-                logger.log(Level.SEVERE, "Error subscribing to topics: " + e.getMessage());
+                logger.log(Level.SEVERE, "Error subscribing to topics: %s" + e.getMessage());
             }
         } catch (MqttException e) {
-            logger.log(Level.WARNING, "Error connecting to MQTT server: " + e.getMessage());
+            logger.log(Level.WARNING, "Error connecting to MQTT server: %s" + e.getMessage());
         }
     }
-
 
     public void connectMongo() {
         String mongoURI = "mongodb://";
@@ -127,37 +126,39 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             if (Boolean.parseBoolean(ReadFromMQTTToMongoDB.mongoAuthentication)) {
                 mongoURI += "&authSource=admin";
             }
-        } else if (Boolean.parseBoolean(ReadFromMQTTToMongoDB.mongoAuthentication)) {
-            mongoURI += "/?authSource=admin";
         }
 
-        MongoClientURI uri = new MongoClientURI(mongoURI);
-        MongoClient mongoClient = new MongoClient(uri);
-        DB db = mongoClient.getDB(ReadFromMQTTToMongoDB.mongoDatabase);
-        mongocoltemp = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONTEMP);
-        mongocolmov = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONMOV);
-        mongocolout = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONOUT);
-        mongocolwrong = db.getCollection(ReadFromMQTTToMongoDB.MONGOCOLLECTIONWRONG);
+        MongoClient mongoClient = new MongoClient(new MongoClientURI(mongoURI));
+        DB database = mongoClient.getDB(ReadFromMQTTToMongoDB.mongoDatabase);
+
+        mongocolmov = database.getCollection(MONGOCOLLECTIONMOV);
+        mongocoltemp = database.getCollection(MONGOCOLLECTIONTEMP);
+        mongocolwrong = database.getCollection(MONGOCOLLECTIONWRONG);
     }
 
     @Override
     public void messageArrived(String topic, MqttMessage message) {
         try {
-            DBObject document_json = (DBObject) JSON.parse(message.toString());
+            DBObject documentJson = (DBObject) JSON.parse(message.toString());
             documentLabel.append(message + "\n");
 
             if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
-                mongocoltemp.insert(document_json);
-                processTemperatureValues(document_json);
+                if (processTemperatureValues(documentJson)) {
+                    documentJson.put(OUTLIER, 1);
+                    DBObject query = new BasicDBObject("_id", documentJson.get("_id"));
+                    mongocoltemp.update(query, documentJson);
+                } else {
+                    documentJson.put(OUTLIER, 0);
+                    mongocoltemp.insert(documentJson);
+                }
             } else if (topic.equals(cloudTopicMov) && mongocolmov != null) {
-                mongocolmov.insert(document_json);
+                mongocolmov.insert(documentJson);
             }
         } catch (JSONParseException | NumberFormatException e) {
             try {
                 String messageString = new String(message.getPayload());
                 mongocolwrong.insert(new BasicDBObject("topic", topic)
                         .append("message", messageString));
-                logger.log(Level.INFO, "Wrong Value detected! Inserted into the wrong values collection");
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, "Error while inserting wrong value into MongoDB: " + ex.getMessage(), ex);
             }
@@ -166,16 +167,8 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         }
     }
 
-    private void insertDocument(DBCollection collection, DBObject document) {
-        if (collection.count() == 0) {
-            // Collection is empty, insert the document
-            collection.insert(document);
-        } else {
-            // Collection has documents, do nothing
-        }
-    }
-
-    private void processTemperatureValues(DBObject document) {
+    private boolean processTemperatureValues(DBObject document) {
+        boolean result = false;
         double temp = Double.parseDouble(document.get("Leitura").toString());
         tempValues.add(temp);
         if (tempValues.size() > 10) {
@@ -190,9 +183,11 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         double zScore = calculateZScore(values, temp);
 
         if (Math.abs(zScore) > 2.0) {
+            result = true;
             logger.log(Level.INFO, "Anomaly detected!! " + document);
-            mongocolout.insert(document);
+            mongocoltemp.save(document);
         }
+        return result;
     }
 
     private void logError(Exception e) {
@@ -222,7 +217,6 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         double stdDev = Math.sqrt(squareSum / (values.length - 1));
 
         double zScore = (value - mean) / stdDev;
-        logger.log(Level.INFO, "Z-Score: " + zScore);
         return zScore;
     }
 

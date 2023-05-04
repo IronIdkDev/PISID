@@ -1,39 +1,53 @@
 package experiment.mice;
 
+import javax.swing.*;
 import org.eclipse.paho.client.mqttv3.*;
 
 public class MqttToSql {
-    // MQTT broker URL
-    private static final String BROKER_URL = "tcp://localhost:1883";
+    private static final String BROKER_URL = "ssl://5893ab818d254bdf8af7ef32f0a96df1.s2.eu.hivemq.cloud:8883";
+    private static final String MQTT_TOPIC = "sensoresData";
+    private static final String MQTT_USER = "pisid35";
+    private static final String MQTT_PASSWORD = "35AhM0@a";
 
-    // MQTT topic to subscribe to
-    private static final String MQTT_TOPIC = "replicaset-data";
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("MQTT to SQL");
+            JTextArea textArea = new JTextArea(20, 40);
+            textArea.setEditable(false);
+            frame.getContentPane().add(new JScrollPane(textArea));
+            frame.pack();
+            frame.setVisible(true);
 
-    public static void main(String[] args) throws MqttException {
-        // Create an MQTT client
-        MqttClient mqttClient = new MqttClient(BROKER_URL, MqttClient.generateClientId());
-
-        // Set up a callback to handle incoming MQTT messages
-        mqttClient.setCallback(new MqttCallback() {
-            @Override
-            public void connectionLost(Throwable throwable) {}
-
-            @Override
-            public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
-                System.out.println("Received message on topic " + topic + ": " + new String(mqttMessage.getPayload()));
+            MqttClient mqttClient = null;
+            try {
+                mqttClient = new MqttClient(BROKER_URL, MqttClient.generateClientId());
+                MqttConnectOptions options = new MqttConnectOptions();
+                options.setUserName(MQTT_USER);
+                options.setPassword(MQTT_PASSWORD.toCharArray());
+                options.setCleanSession(true);
+                mqttClient.connect(options);
+                mqttClient.subscribe(MQTT_TOPIC, (topic, message) -> {
+                    String payload = new String(message.getPayload());
+                    textArea.append(payload + "\n");
+                });
+            } catch (MqttException e) {
+                e.printStackTrace();
             }
 
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {}
+            if (mqttClient != null && mqttClient.isConnected()) {
+                try {
+                    mqttClient.disconnect();
+                } catch (MqttException e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                if (mqttClient != null) {
+                    mqttClient.close();
+                }
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
         });
-
-        // Connect to the MQTT broker
-        mqttClient.connect();
-
-        // Subscribe to the "replicaset-data" topic
-        mqttClient.subscribe(MQTT_TOPIC);
-
-        // Wait for incoming messages
-        while (true) {}
     }
 }
