@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 03-Maio-2023 às 16:11
+-- Tempo de geração: 04-Maio-2023 às 15:07
 -- Versão do servidor: 10.4.28-MariaDB
 -- versão do PHP: 8.2.4
 
@@ -147,8 +147,12 @@ ELSE
 SELECT experiencia.IDexperiência INTO id
 FROM experiencia
 WHERE experiencia.Ativa = 1;
-END IF;
 
+	IF(SalaEntrada = 0 AND SalaSaida = 0)THEN
+		UPDATE experiencia SET Ativa = 0 WHERE experiencia.IDexperiência = id;
+    END IF;
+
+END IF;
 
 INSERT INTO medicoespassagens (IdMedicao, Hora, SalaEntrada, SalaSaida, IDExperiência)
     VALUES (count +1,current_timestamp(), SalaEntrada,SalaSaida,id); 
@@ -198,6 +202,69 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `EditarDescricaoExperiencia` (IN `IDExperiencia` INT, IN `Descricao` TEXT)   BEGIN
 
 UPDATE experiencia SET Descricao = Descricao WHERE experiencia.IDexperiência = IDExperiencia;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Editar_Sub` (IN `id` INT, IN `ratos` INT, IN `codigo` VARCHAR(3), IN `idexp` INT)   BEGIN
+
+DECLARE nratos INT;
+DECLARE num INT;
+DECLARE counter INT;
+SELECT getSumRats(idexp, id) INTO nratos;
+
+SELECT experiencia.NumeroRatos INTO num
+FROM experiencia
+WHERE experiencia.IDexperiência = idexp;
+
+SELECT COUNT(*) INTO counter
+FROM substanciaexperiencia
+WHERE substanciaexperiencia.IDexperiencia = id 
+AND substanciaexperiencia.CodigoSubstancia = codigo;
+
+SELECT nratos, ratos, counter, num;
+
+IF(num >= (nratos + ratos) AND counter = 0)THEN
+
+UPDATE substanciaexperiencia SET substanciaexperiencia.NumeroRatos = ratos
+WHERE substanciaexperiencia.IDMedicao = id;
+UPDATE substanciaexperiencia SET substanciaexperiencia.CodigoSubstancia = codigo 
+WHERE substanciaexperiencia.IDMedicao = id;
+ELSE
+
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Não foi possível editar';
+
+END IF;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Edita_Odor` (IN `id` INT, IN `sala` INT, IN `codigo` VARCHAR(3), IN `idexp` INT)   BEGIN
+
+DECLARE counter INT;
+DECLARE counter2 INT;
+
+SELECT COUNT(*) INTO counter
+FROM odoresexperiencia
+WHERE odoresexperiencia.Sala = sala
+AND odoresexperiencia.IdExperiencia = idexp
+AND odoresexperiencia.CodigoOdor = codigo;
+
+SELECT COUNT(*) INTO counter2
+FROM odoresexperiencia
+WHERE odoresexperiencia.Sala = sala
+AND odoresexperiencia.IdExperiencia = idexp
+AND odoresexperiencia.IDMedicao <> id;
+
+IF(counter = 0 AND counter2 = 0) THEN
+
+    UPDATE odoresexperiencia SET Sala = sala
+    WHERE odoresexperiencia.IDMedicao = id;
+
+    UPDATE odoresexperiencia SET CodigoOdor = codigo
+    WHERE odoresexperiencia.IDMedicao = id;
+
+ELSE 
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Não foi possível editar';
+END IF;
 
 END$$
 
@@ -260,7 +327,7 @@ END IF;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `Mostra_Odores` (IN `experienciaID` INT)   BEGIN
-SELECT odoresexperiencia.Sala, odoresexperiencia.CodigoOdor
+SELECT odoresexperiencia.IDMedicao ,odoresexperiencia.Sala, odoresexperiencia.CodigoOdor
 FROM odoresexperiencia
 WHERE odoresexperiencia.IdExperiencia = experienciaID;
 
@@ -292,7 +359,7 @@ WHERE medicoessalas.IDExperiencia = id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `Mostra_Substancias` (IN `experienciaID` INT)   BEGIN
-SELECT substanciaexperiencia.CodigoSubstancia, substanciaexperiencia.NumeroRatos
+SELECT substanciaexperiencia.IDMedicao ,substanciaexperiencia.CodigoSubstancia, substanciaexperiencia.NumeroRatos
 FROM substanciaexperiencia
 WHERE substanciaexperiencia.IDexperiencia = experienciaID;
 
@@ -314,6 +381,15 @@ from medicoestemperatura
 WHERE medicoestemperatura.IDExperiência = IDExperiencia
 ORDER BY medicoestemperatura.IDMedicao 
 DESC LIMIT 1$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Return_Salas_Utilizadas` (IN `id` INT)   BEGIN
+
+SELECT odoresexperiencia.Sala
+FROM odoresexperiencia
+WHERE odoresexperiencia.IdExperiencia = id;
+
+
+END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `Suspend_User` (IN `userMail` VARCHAR(50))   BEGIN
 IF EXISTS (SELECT EmailUtilizador FROM utilizador WHERE Emailutilizador = userMail) THEN
@@ -337,6 +413,28 @@ LIMIT 1;
 
 RETURN id;
 
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `getLimiteSalas` (`id` INT) RETURNS INT(11)  BEGIN
+
+DECLARE counter INT;
+
+SELECT parâmetrosadicionais.NúmeroSalas INTO counter
+FROM parâmetrosadicionais
+WHERE parâmetrosadicionais.IDExperiência = id;
+
+RETURN counter;
+END$$
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `getNumRatos` (`id` INT) RETURNS INT(11)  BEGIN
+DECLARE number INT;
+
+SELECT experiencia.NumeroRatos into number
+FROM experiencia
+WHERE experiencia.IDexperiência = id;
+
+RETURN number;
 
 END$$
 
@@ -371,15 +469,21 @@ RETURN number;
 
 END$$
 
-CREATE DEFINER=`root`@`localhost` FUNCTION `getSumRats` (`IDExperiencia` INT) RETURNS INT(11)  BEGIN
+CREATE DEFINER=`root`@`localhost` FUNCTION `getSumRats` (`IDExperiencia` INT, `IDMedicao` INT) RETURNS INT(11)  BEGIN
     DECLARE total_ratos INT;
+    DECLARE id INT;
+    
+    SELECT substanciaexperiencia.NumeroRatos INTO id
+    FROM substanciaexperiencia
+    WHERE substanciaexperiencia.IDMedicao = IDMedicao;
+    
     SELECT SUM(NumeroRatos) INTO total_ratos
     FROM substanciaexperiencia
     WHERE substanciaexperiencia.IDexperiencia = IDExperiencia;
     IF (total_ratos IS NULL) THEN
         RETURN 0;
     ELSE
-        RETURN total_ratos;
+        RETURN total_ratos - id;
     END IF;
 END$$
 
@@ -532,11 +636,7 @@ CREATE TABLE `medicoespassagens` (
 --
 
 INSERT INTO `medicoespassagens` (`IdMedicao`, `Hora`, `SalaEntrada`, `SalaSaida`, `IDExperiência`) VALUES
-(1, '2023-05-03 11:22:39', 1, 2, 2),
-(2, '2023-05-03 11:23:15', 1, 3, 2),
-(3, '2023-05-03 11:23:34', 1, 2, 2),
-(4, '2023-05-03 11:26:21', 1, 3, 2),
-(6, '2023-05-03 11:28:07', 1, 3, 2);
+(1, '2023-05-04 12:58:43', 0, 0, 2);
 
 --
 -- Acionadores `medicoespassagens`
@@ -573,9 +673,7 @@ CREATE TABLE `medicoessalas` (
 --
 
 INSERT INTO `medicoessalas` (`IDExperiencia`, `NumeroRatosFinal`, `Sala`) VALUES
-(2, 5, 1),
-(2, -2, 2),
-(2, -3, 3);
+(2, 2, 3);
 
 --
 -- Acionadores `medicoessalas`
@@ -623,6 +721,13 @@ CREATE TABLE `medicoestemperatura` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Extraindo dados da tabela `medicoestemperatura`
+--
+
+INSERT INTO `medicoestemperatura` (`IDMedicao`, `Hora`, `Leitura`, `Sensor`, `IDExperiência`, `Outlier`) VALUES
+(1, '2023-05-04 10:45:27', 9.00, 23, 2, 1);
+
+--
 -- Acionadores `medicoestemperatura`
 --
 DELIMITER $$
@@ -651,7 +756,7 @@ WHERE experiencia.IDexperiência = new.IDExperiência;
 SET tempSub = tempIdeal - variacaoTemp;
 SET tempUlt = tempIdeal + variacaoTemp;
 
-SELECT AVG(valor) INTO media
+SELECT AVG(Leitura) INTO media
 FROM(
 SELECT medicoestemperatura.Leitura
 FROM medicoestemperatura
@@ -688,7 +793,7 @@ CREATE TABLE `odoresexperiencia` (
 --
 
 INSERT INTO `odoresexperiencia` (`Sala`, `IdExperiencia`, `CodigoOdor`, `IDMedicao`) VALUES
-(2, 2, 'eee', 1),
+(2, 2, 'lll', 1),
 (1, 2, 'rrr', 2);
 
 --
@@ -773,7 +878,6 @@ CREATE TABLE `substanciaexperiencia` (
 --
 
 INSERT INTO `substanciaexperiencia` (`NumeroRatos`, `CodigoSubstancia`, `IDexperiencia`, `IDMedicao`) VALUES
-(2, 'bgf', 2, 1),
 (1, 'err', 2, 2);
 
 -- --------------------------------------------------------
@@ -796,6 +900,7 @@ CREATE TABLE `utilizador` (
 --
 
 INSERT INTO `utilizador` (`NomeUtilizador`, `TelefoneUtilizador`, `TipoUtilizador`, `EmailUtilizador`, `Ativo`, `NúmeroExperiências`) VALUES
+('Alice', '910349808', 'TEC', 'alice@gmail.com', 1, 0),
 ('Bruno', '999999999', 'INV', 'bruno@gmail.com', 1, 1),
 ('Default', '000000000', 'INV', 'default', 1, 1),
 ('Vasco', '910349086', 'ADM', 'vasquinho@iscte-iu.pt', 1, 0);
