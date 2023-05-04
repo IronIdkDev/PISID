@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 03-Maio-2023 às 13:55
+-- Tempo de geração: 03-Maio-2023 às 16:11
 -- Versão do servidor: 10.4.28-MariaDB
 -- versão do PHP: 8.2.4
 
@@ -180,6 +180,21 @@ VALUES (counter+1, nRatos, codigoSubs, idExperiencia);
 
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Delete_Odor` (IN `id` INT)   BEGIN
+
+DELETE FROM odoresexperiencia
+WHERE odoresexperiencia.IDMedicao = id;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Delete_Sub` (IN `id` INT)   BEGIN
+
+DELETE FROM substanciaexperiencia
+WHERE substanciaexperiencia.IDMedicao = id;
+
+
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `EditarDescricaoExperiencia` (IN `IDExperiencia` INT, IN `Descricao` TEXT)   BEGIN
 
 UPDATE experiencia SET Descricao = Descricao WHERE experiencia.IDexperiência = IDExperiencia;
@@ -264,6 +279,15 @@ medicoespassagens.SalaEntrada,medicoespassagens.SalaSaida
 FROM medicoespassagens
 WHERE medicoespassagens.IDExperiência = IDExperiencia;
 END IF;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Mostra_Salas` (IN `id` INT)   BEGIN
+
+SELECT medicoessalas.NumeroRatosFinal, medicoessalas.Sala
+FROM medicoessalas
+WHERE medicoessalas.IDExperiencia = id;
+
 
 END$$
 
