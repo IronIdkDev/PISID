@@ -74,9 +74,11 @@ if ($conn->connect_error) {
             <h1>Tabela de Odores</h1>
             <?php
 				echo "<table>";
-                echo "<tr><th>Sala</th><th>CodigoOdor</th></tr>";
+                echo "<tr><th>Sala</th><th>CodigoOdor</th><th>Editar Odor</th></tr>";
                 while($row1 = $result1->fetch_assoc()) {
-                echo "<tr><td>" . $row1["Sala"] . "</td><td>" . $row1["CodigoOdor"] . "</td></tr>";
+					$idmedicao = intval($row1["IDMedicao"]);
+                echo "<tr><td>" . $row1["Sala"] . "</td><td>" . $row1["CodigoOdor"] . "</td><td>
+				<form method='post'><input type='hidden' name='editarOdor' value='$idmedicao'><input type='hidden' name='Editar Odor' value=Editar><input type='submit' name='Editar Odor' value=EditarOdor style='background-color: green;'></form></td></tr>";
                 }
                 echo "</table>";
 			}else {
@@ -97,10 +99,12 @@ if ($conn->connect_error) {
             <h1>Tabela de Substancias</h1>
             <?php
                 echo "<table>";
-                echo "<tr><th>NumeroRatos</th><th>CodigoSubstancia</th></tr>";
+                echo "<tr><th>NumeroRatos</th><th>CodigoSubstancia</th><th>Alterar valores</th></tr>";
                 while($row = $result2->fetch_assoc()) {
-                echo "<tr><td>" . $row["NumeroRatos"] . "</td><td>" . $row["CodigoSubstancia"] . "</td></tr>";
-                }
+					$idmedicao = intval($row["IDMedicao"]);
+					echo "<tr><td>" . $row["NumeroRatos"] . "</td><td>" . $row["CodigoSubstancia"] . "</td><td><form method='post'><input type='hidden' name='editarSub' value='$idmedicao'><input type='hidden' name='Editar Substância' value=Editar><input type='submit' name='EditarSub' value=EditarSub style='background-color: green;'></form></td></tr>";
+
+			}
                echo "</table>";
 			}else {
 				echo"Não foram encontrados dados de substâncias relativo a esta experiência";
@@ -129,6 +133,30 @@ if ($conn->connect_error) {
 
 			}
 
+			while ($conn->next_result()) {
+				if ($res = $conn->store_result()) {
+					$res->free();
+				}
+			}
+			$sql4 = "CALL Mostra_Salas('$id');";
+			$result4 = $conn->query($sql4);
+			if($result4->num_rows > 0){
+				?>
+				<h1>Tabela de Medições das Salas</h1>
+				<?php
+				echo "<table>";
+				echo "<tr><th>Número de ratos na sala</th><th>Sala</th></tr>";
+				while($row = $result3->fetch_assoc()) {
+					echo"<tr><th>". $row["NumeroRatosFinal"]   . "</th><th>" .  $row["Sala"]  ."</th></tr>";
+				}
+				echo "</table>";
+			} else {
+				echo"Não foram encontrados alertas relativo a esta experiência";
+			}
+
+
+
+
 			// Fecha a conexão
 			$conn->close();
 
@@ -147,6 +175,54 @@ if ($conn->connect_error) {
 					throw new Exception("Ocorreu algum problema. Tenta novamente mais tarde.");
 				}
                 exit;
+
+
+			}else if(isset($_POST["editarOdor"])) {
+				$_SESSION['idmedicao'] = $_POST['editarOdor'];
+
+				// Nome da funntion
+				$function = "verifyExperiencia";
+				// Prepara a function
+				$stmt = $conn->prepare("SELECT $function(?) AS resultado");
+				// Define o valor do parâmetro da function
+				$stmt->bind_param('s', $id);
+				// Faz a consulta
+				$stmt->execute();
+				// Obtém o resultado da consulta
+				$result = $stmt->get_result();
+				// Guarda o valor retornado pela function
+				$resultado = $result->fetch_assoc()['resultado'];	
+				$resultadoInt = intval($resultado);
+				if($resultadoInt == 0){
+					header("Location: alteraOdor.php");
+				}else{
+					echo "Esta experiência já foi iniciada e concluída";
+				}
+
+
+
+			}else if(isset($_POST["editarSub"])) {
+				$_SESSION['idmedicao'] = $_POST['editarSub'];
+				
+				// Nome da funntion
+				$function = "verifyExperiencia";
+				// Prepara a function
+				$stmt = $conn->prepare("SELECT $function(?) AS resultado");
+				// Define o valor do parâmetro da function
+				$stmt->bind_param('s', $id);
+				// Faz a consulta
+				$stmt->execute();
+				// Obtém o resultado da consulta
+				$result = $stmt->get_result();
+				// Guarda o valor retornado pela function
+				$resultado = $result->fetch_assoc()['resultado'];	
+				$resultadoInt = intval($resultado);
+				if($resultadoInt == 0){
+					header("Location: alteraSubs.php");
+				}else{
+					echo "Esta experiência já foi iniciada e concluída";
+				}
+
 
 			}else if(isset($_POST["logout"])){
                 session_unset();
