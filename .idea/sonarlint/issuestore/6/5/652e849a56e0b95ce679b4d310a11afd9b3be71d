@@ -1,24 +1,0 @@
-
-g	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(Ò‚Òéüÿÿÿÿ8ÃÛñ’ş0
-r	java:S117"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(‹ùÖ‚øÿÿÿÿ8ÄÛñ’ş0
-r	java:S117"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(íû·£ûÿÿÿÿ8ÅÛñ’ş0
-K
-java:S3416".Update this logger to use "MongoToMqtt.class".(¡ß§Ô8ÈÛñ’ş0
-_
-java:S1854"=Remove this useless assignment to local variable "temp_data".(íû·£ûÿÿÿÿ8ÒÛñ’ş0
-^
-java:S1854"<Remove this useless assignment to local variable "mov_data".(‹ùÖ‚øÿÿÿÿ8ÒÛñ’ş0
-^
-java:S1854)"<Remove this useless assignment to local variable "textArea".(ÛŒæÿÿÿÿÿ8ö£õ’ş0
-O
-java:S1481"-Remove this unused "mov_data" local variable.(‹ùÖ‚øÿÿÿÿ8ÔÛñ’ş0
-P
-java:S1481".Remove this unused "temp_data" local variable.(íû·£ûÿÿÿÿ8ÔÛñ’ş0
-O
-java:S1481)"-Remove this unused "textArea" local variable.(ÛŒæÿÿÿÿÿ8ù£õ’ş0
-f
-java:S3252<"IUse static access with "javax.swing.WindowConstants" for "EXIT_ON_CLOSE".(¢¡´8“›ö’ş0
-G
-java:S1068"*Remove this unused "logger" private field.(¡ß§Ô8ÔÛñ’ş0
-Q
-java:S1068"/Remove this unused "COLLECTIONS" private field.(Áˆ÷¶ıÿÿÿÿ8°â†“ş0
