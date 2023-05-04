@@ -43,12 +43,7 @@ public class Main {
                     }
                 } else {
                     try {
-                        String[] sensorsCommand = {"cmd.exe", "/c", "taskkill /F /IM python.exe"};
-                        ProcessBuilder sensorsBuilder = new ProcessBuilder(sensorsCommand);
-                        sensorsBuilder.redirectErrorStream(true);
-                        sensorsBuilder.start();
-                        button.setText(PROGRAM_START);
-                        button.setColor(Color.GREEN);
+                        stopServers(button);
                     } catch (IOException ioException) {
                         logger.log(Level.SEVERE, "Error stopping the program", ioException);
                     }
@@ -73,12 +68,24 @@ public class Main {
         }
     }
 
-    private static void startServers(CircularButton button) throws IOException {
-        String sensorsInit = "sensores_init";
-        String[] sensorsCommand = {"cmd.exe", "/c", "cd C:\\Users\\wilio\\Documents\\GitHub\\PISID\\ReplicaSet_MongoDB && " + sensorsInit + ".bat"};
+    private static void stopServers(CircularButton button) throws IOException {
+        String[] sensorsCommand = {"cmd.exe", "/c", "TASKKILL /F /FI \"WINDOWTITLE eq Server S1\" /T && TASKKILL /F /FI \"WINDOWTITLE eq Server S2\" /T && TASKKILL /F /FI \"WINDOWTITLE eq Server S3\" /T"};
         ProcessBuilder sensorsBuilder = new ProcessBuilder(sensorsCommand);
         sensorsBuilder.redirectErrorStream(true);
         sensorsBuilder.start();
+        button.setText(PROGRAM_START);
+        button.setColor(Color.GREEN);
+    }
+
+    private static void startServers(CircularButton button) throws IOException {
+        //Runs the sensores_init.bat file to run the servers
+        String sensorsInit = "sensores_init";
+        String cmd = "cmd.exe";
+        String[] sensorsCommand = {cmd, "/c", "cd C:\\Users\\wilio\\Documents\\GitHub\\PISID\\ReplicaSet_MongoDB && " + sensorsInit + ".bat"};
+        ProcessBuilder sensorsBuilder = new ProcessBuilder(sensorsCommand);
+        sensorsBuilder.redirectErrorStream(true);
+        sensorsBuilder.start();
+        //Changes the Button's text and color
         button.setText("Stop the Program");
         button.setColor(Color.RED);
     }
