@@ -65,7 +65,7 @@ public class MongoToMqtt {
         MongoClient mongoClient = MongoClients.create("mongodb://" + MONGO_ADDRESS + "/?replicaSet=" + MONGO_REPLICA);
         MongoDatabase database = mongoClient.getDatabase(MONGO_DATABASE);
 
-        while (result){
+        while (result) {
             MongoCollection<Document> movCollection = database.getCollection(MONGOCOLLECTIONMOV);
             mqttTopicMov = MONGOCOLLECTIONMOV;
 
@@ -78,42 +78,46 @@ public class MongoToMqtt {
             MongoCursor<ChangeStreamDocument<Document>> movCursor = movChangeStreamIterable.iterator();
             MongoCursor<ChangeStreamDocument<Document>> tempCursor = tempChangeStreamIterable.iterator();
 
-            while (movCursor.hasNext()) {
-                ChangeStreamDocument<Document> changeStreamDocument = movCursor.next();
-                Document document = changeStreamDocument.getFullDocument();
-                document.remove("_id");  // remove the _id field
-                JsonWriterSettings settings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build();
-                String json = document.toJson(settings);
+            while (movCursor.hasNext() || tempCursor.hasNext()) {
+                if (movCursor.hasNext()) {
+                    System.out.println("entrou 1 if");
+                    ChangeStreamDocument<Document> changeStreamDocument = movCursor.next();
+                    Document document = changeStreamDocument.getFullDocument();
+                    document.remove("_id");  // remove the _id field
+                    JsonWriterSettings settings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build();
+                    String json = document.toJson(settings);
 
-                // Publish the JSON message to the HiveMQ broker
-                MqttMessage message = new MqttMessage(json.getBytes());
-                message.setQos(1);
-                try {
-                    mqttclient.publish(mqttTopicMov, message);
-                    textArea.append("Published MQTT message to " + mqttTopicMov + ": " + json + "\n");
-                } catch (MqttException e) {
-                    logger.warning("Failed to publish MQTT message: " + e.getMessage());
+                    // Publish the JSON message to the HiveMQ broker
+                    MqttMessage message = new MqttMessage(json.getBytes());
+                    message.setQos(1);
+                    try {
+                        mqttclient.publish(mqttTopicMov, message);
+                        textArea.append("Published MQTT message to " + mqttTopicMov + ": " + json + "\n");
+                    } catch (MqttException e) {
+                        logger.warning("Failed to publish MQTT message: " + e.getMessage());
+                    }
                 }
-            }
+                if (tempCursor.hasNext()) {
+                    System.out.println("2");
+                    ChangeStreamDocument<Document> changeStreamDocument = tempCursor.next();
+                    Document document = changeStreamDocument.getFullDocument();
+                    document.remove("_id");  // remove the _id field
+                    JsonWriterSettings settings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build();
+                    String json = document.toJson(settings);
 
-            while (tempCursor.hasNext()) {
-                ChangeStreamDocument<Document> changeStreamDocument = tempCursor.next();
-                Document document = changeStreamDocument.getFullDocument();
-                document.remove("_id");  // remove the _id field
-                JsonWriterSettings settings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build();
-                String json = document.toJson(settings);
-
-                // Publish the JSON message to the HiveMQ broker
-                MqttMessage message = new MqttMessage(json.getBytes());
-                message.setQos(0);
-                try {
-                    mqttclient.publish(mqttTopicTemp, message);
-                    textArea.append("Published MQTT message to " + mqttTopicTemp + ": " + json + "\n");
-                } catch (MqttException e) {
-                    logger.warning("Failed to publish MQTT message: " + e.getMessage());
+                    // Publish the JSON message to the HiveMQ broker
+                    MqttMessage message = new MqttMessage(json.getBytes());
+                    message.setQos(0);
+                    try {
+                        mqttclient.publish(mqttTopicTemp, message);
+                        textArea.append("Published MQTT message to " + mqttTopicTemp + ": " + json + "\n");
+                    } catch (MqttException e) {
+                        logger.warning("Failed to publish MQTT message: " + e.getMessage());
+                    }
                 }
+                movCursor = movCollection.watch().iterator();
+                tempCursor = tempCollection.watch().iterator();
             }
-
         }
     }
 }
