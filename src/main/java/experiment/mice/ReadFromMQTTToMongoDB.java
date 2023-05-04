@@ -17,7 +17,6 @@ import java.util.logging.Level;
 
 public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static final Logger logger = Logger.getLogger(ReadFromMQTTToMongoDB.class.getName());
-
     private DBCollection mongocolmov;
     private DBCollection mongocoltemp;
     private DBCollection mongocolout;
