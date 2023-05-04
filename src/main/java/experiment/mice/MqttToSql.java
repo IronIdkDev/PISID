@@ -5,7 +5,8 @@ import org.eclipse.paho.client.mqttv3.*;
 
 public class MqttToSql {
     private static final String BROKER_URL = "ssl://5893ab818d254bdf8af7ef32f0a96df1.s2.eu.hivemq.cloud:8883";
-    private static final String MQTT_TOPIC = "sensoresData";
+    private static String mqttTopicMov = "SensoresMovimento";
+    private static String mqttTopicTemp = "SensoresTempertura";
     private static final String MQTT_USER = "pisid35";
     private static final String MQTT_PASSWORD = "35AhM0@a";
 
@@ -16,7 +17,9 @@ public class MqttToSql {
             textArea.setEditable(false);
             frame.getContentPane().add(new JScrollPane(textArea));
             frame.pack();
+            frame.setLocationRelativeTo(null);
             frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
             MqttClient mqttClient = null;
             try {
@@ -26,7 +29,7 @@ public class MqttToSql {
                 options.setPassword(MQTT_PASSWORD.toCharArray());
                 options.setCleanSession(true);
                 mqttClient.connect(options);
-                mqttClient.subscribe(MQTT_TOPIC, (topic, message) -> {
+                mqttClient.subscribe(mqttTopicMov, (topic, message) -> {
                     String payload = new String(message.getPayload());
                     textArea.append(payload + "\n");
                 });
