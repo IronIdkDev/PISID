@@ -11,22 +11,23 @@ public class Main {
     private static final String PROGRAM_START = "Start the Program";
 
     public static void main(String[] args) {
-        startUIandAuthentication();
+        startUIAndAuthentication();
     }
 
-    private static void startUIandAuthentication() {
+    private static boolean authenticateUser() {
+        String username = JOptionPane.showInputDialog(null, "Enter your username:");
+        String password = JOptionPane.showInputDialog(null, "Enter your password:");
+        return username.equals("admin") && password.equals("password");
+    }
+
+    private static void startUIAndAuthentication() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
 
-        // User Authentication
-        String username = JOptionPane.showInputDialog(null, "Enter your username:");
-        String password = JOptionPane.showInputDialog(null, "Enter your password:");
-
-        // Check whether the entered username and password are correct
-        if (username.equals("admin") && password.equals("password")) {
+        if (authenticateUser()) {
             JFrame frame = new JFrame(PROGRAM_START);
             frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             frame.setSize(500, 500);
@@ -42,10 +43,10 @@ public class Main {
                     }
                 } else {
                     try {
-                        String[] sensoresCommand = {"cmd.exe", "/c", "taskkill /F /IM python.exe"};
-                        ProcessBuilder sensoresBuilder = new ProcessBuilder(sensoresCommand);
-                        sensoresBuilder.redirectErrorStream(true);
-                        sensoresBuilder.start();
+                        String[] sensorsCommand = {"cmd.exe", "/c", "taskkill /F /IM python.exe"};
+                        ProcessBuilder sensorsBuilder = new ProcessBuilder(sensorsCommand);
+                        sensorsBuilder.redirectErrorStream(true);
+                        sensorsBuilder.start();
                         button.setText(PROGRAM_START);
                         button.setColor(Color.GREEN);
                     } catch (IOException ioException) {
@@ -55,10 +56,15 @@ public class Main {
             });
 
             JPanel panel = new JPanel();
-            panel.setLayout(new FlowLayout(FlowLayout.CENTER));
-            panel.setBorder(BorderFactory.createEmptyBorder(100, 0, 0, 0)); // add an empty border to center the button vertically
+            panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+            panel.setOpaque(false);
+            panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            panel.setAlignmentY(Component.CENTER_ALIGNMENT);
+            panel.add(Box.createHorizontalGlue());
             panel.add(button);
+            panel.add(Box.createHorizontalGlue());
 
+            frame.add(Box.createVerticalGlue(), BorderLayout.CENTER);
             frame.add(panel, BorderLayout.CENTER);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
@@ -68,10 +74,11 @@ public class Main {
     }
 
     private static void startServers(CircularButton button) throws IOException {
-        String[] sensoresCommand = {"cmd.exe", "/c", "cd C:\\Users\\wilio\\Documents\\GitHub\\PISID\\ReplicaSet_MongoDB && sensores_init.bat"};
-        ProcessBuilder sensoresBuilder = new ProcessBuilder(sensoresCommand);
-        sensoresBuilder.redirectErrorStream(true);
-        sensoresBuilder.start();
+        String sensorsInit = "sensores_init";
+        String[] sensorsCommand = {"cmd.exe", "/c", "cd C:\\Users\\wilio\\Documents\\GitHub\\PISID\\ReplicaSet_MongoDB && " + sensorsInit + ".bat"};
+        ProcessBuilder sensorsBuilder = new ProcessBuilder(sensorsCommand);
+        sensorsBuilder.redirectErrorStream(true);
+        sensorsBuilder.start();
         button.setText("Stop the Program");
         button.setColor(Color.RED);
     }
@@ -86,8 +93,8 @@ public class Main {
             setFocusPainted(false);
             setBorderPainted(false);
             setOpaque(false);
-            setPreferredSize(new Dimension(300, 80)); // adjust the preferred size to fit the text
-            setFont(getFont().deriveFont(16f));
+            setFont(getFont().deriveFont(24f));
+            setForeground(Color.WHITE);
             setHorizontalTextPosition(SwingConstants.CENTER);
             setVerticalTextPosition(SwingConstants.CENTER);
         }
@@ -101,9 +108,11 @@ public class Main {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(color);
-            int diameter = Math.min(getWidth(), getHeight());
-            g2.fillRoundRect((getWidth() - diameter) / 2, (getHeight() - diameter) / 2, diameter, diameter, diameter, diameter); // use a rounded rectangle shape
+            int width = getWidth();
+            int height = getHeight();
+            GradientPaint gradient = new GradientPaint(0, 0, color.darker(), width, height, color.brighter());
+            g2.setPaint(gradient);
+            g2.fillRoundRect(0, 0, width - 1, height - 1, 50, 50);
             super.paintComponent(g);
             g2.dispose();
         }
