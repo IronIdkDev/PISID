@@ -43,6 +43,14 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     }
 
     private void createWindow() {
+
+        // Set Look and Feel to make the UI look more modern
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
+
         JFrame frame = new JFrame("Cloud to Mongo");
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 

@@ -5,13 +5,11 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.Document;
 import org.bson.json.JsonMode;
 import org.bson.json.JsonWriterSettings;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,6 +31,9 @@ public class MongoToMqtt {
     private static final String MONGO_DATABASE = "sensores";
     private static final MqttConnectOptions connOpts = new MqttConnectOptions();
 
+    private static String lastMovMessage = null;
+    private static String lastTempMessage = null;
+    private static long lastSentTime = 0;
 
     static {
         try {
@@ -45,79 +46,119 @@ public class MongoToMqtt {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws MqttException {
 
-        boolean result = true;
+        final boolean[] running = {true};
 
-        // Create the JFrame and JTextArea
+        // Set Look and Feel to make the UI look more modern
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
+
         JFrame frame = new JFrame("MQTT Messages");
         JTextArea textArea = new JTextArea(20, 80);
         JScrollPane scrollPane = new JScrollPane(textArea);
+        JButton button = new JButton(running[0] ? "Stop" : "Start");
         frame.getContentPane().add(scrollPane);
+        frame.setSize(500, 500);
+        frame.setLayout(new BorderLayout());
+        frame.add(scrollPane, BorderLayout.CENTER);
+        frame.add(button, BorderLayout.SOUTH);
 
         // Display the JFrame
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        button.addActionListener(e -> {
+            running[0] = !running[0];
+            button.setText(running[0] ? "Stop" : "Start");
+        });
+
 
         // Connect to the MongoDB replica set
         MongoClient mongoClient = MongoClients.create("mongodb://" + MONGO_ADDRESS + "/?replicaSet=" + MONGO_REPLICA);
         MongoDatabase database = mongoClient.getDatabase(MONGO_DATABASE);
 
-        while (result) {
-            MongoCollection<Document> movCollection = database.getCollection(MONGOCOLLECTIONMOV);
-            mqttTopicMov = MONGOCOLLECTIONMOV;
+        // Watch for changes in the MongoDB collections
+        MongoCollection<Document> movCollection = database.getCollection(MONGOCOLLECTIONMOV);
+        MongoCollection<Document> tempCollection = database.getCollection(MONGOCOLLECTIONTEMP);
 
-            MongoCollection<Document> tempCollection = database.getCollection(MONGOCOLLECTIONTEMP);
-            mqttTopicTemp = MONGOCOLLECTIONTEMP;
+        MongoCursor<ChangeStreamDocument<Document>> movCursor = movCollection.watch().iterator();
+        MongoCursor<ChangeStreamDocument<Document>> tempCursor = tempCollection.watch().iterator();
 
-            ChangeStreamIterable<Document> movChangeStreamIterable = movCollection.watch();
-            ChangeStreamIterable<Document> tempChangeStreamIterable = tempCollection.watch();
-
-            MongoCursor<ChangeStreamDocument<Document>> movCursor = movChangeStreamIterable.iterator();
-            MongoCursor<ChangeStreamDocument<Document>> tempCursor = tempChangeStreamIterable.iterator();
-
-            while (movCursor.hasNext() || tempCursor.hasNext()) {
-                if (movCursor.hasNext()) {
-                    System.out.println("entrou 1 if");
-                    ChangeStreamDocument<Document> changeStreamDocument = movCursor.next();
-                    Document document = changeStreamDocument.getFullDocument();
-                    document.remove("_id");  // remove the _id field
-                    JsonWriterSettings settings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build();
-                    String json = document.toJson(settings);
-
-                    // Publish the JSON message to the HiveMQ broker
-                    MqttMessage message = new MqttMessage(json.getBytes());
-                    message.setQos(1);
-                    try {
-                        mqttclient.publish(mqttTopicMov, message);
-                        textArea.append("Published MQTT message to " + mqttTopicMov + ": " + json + "\n");
-                    } catch (MqttException e) {
-                        logger.warning("Failed to publish MQTT message: " + e.getMessage());
-                    }
-                }
-                if (tempCursor.hasNext()) {
-                    System.out.println("2");
-                    ChangeStreamDocument<Document> changeStreamDocument = tempCursor.next();
-                    Document document = changeStreamDocument.getFullDocument();
-                    document.remove("_id");  // remove the _id field
-                    JsonWriterSettings settings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build();
-                    String json = document.toJson(settings);
-
-                    // Publish the JSON message to the HiveMQ broker
-                    MqttMessage message = new MqttMessage(json.getBytes());
-                    message.setQos(0);
-                    try {
-                        mqttclient.publish(mqttTopicTemp, message);
-                        textArea.append("Published MQTT message to " + mqttTopicTemp + ": " + json + "\n");
-                    } catch (MqttException e) {
-                        logger.warning("Failed to publish MQTT message: " + e.getMessage());
-                    }
-                }
-                movCursor = movCollection.watch().iterator();
-                tempCursor = tempCollection.watch().iterator();
+        while (running[0] == true) {
+            if (movCursor.hasNext()) {
+                processMovementData(textArea, movCursor);
             }
+
+            if (tempCursor.hasNext()) {
+                processTemperatureData(textArea, tempCursor);
+            }
+
+            // sleep for 10 milliseconds to prevent CPU hogging
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static void processTemperatureData(JTextArea textArea, MongoCursor<ChangeStreamDocument<Document>> tempCursor) throws MqttException {
+        ChangeStreamDocument<Document> changeStreamDocument = tempCursor.next();
+        Document document = changeStreamDocument.getFullDocument();
+        if (document == null) {
+            return;
+        }
+        document.remove("_id");
+        String json = document.toJson(JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build());
+
+        // Publish each document as a separate MQTT message to the HiveMQ broker
+        String[] lines = json.split("\\r?\\n");
+        for (String line : lines) {
+            if (line.equals(lastTempMessage)) {
+                continue;
+            }
+            MqttMessage mqttMessage = new MqttMessage(line.getBytes());
+            mqttMessage.setQos(1);
+            mqttclient.publish(mqttTopicTemp, mqttMessage);
+            textArea.append("Published MQTT message to " + mqttTopicTemp + ": " + line + "\n");
+            lastTempMessage = line;
+        }
+    }
+
+    private static void processMovementData(JTextArea textArea, MongoCursor<ChangeStreamDocument<Document>> movCursor) throws MqttException {
+        ChangeStreamDocument<Document> changeStreamDocument = movCursor.next();
+        Document document = changeStreamDocument.getFullDocument();
+
+        if (document == null) {
+            return;
+        }
+
+        document.remove("_id");
+
+        JsonWriterSettings settings = JsonWriterSettings.builder()
+                .outputMode(JsonMode.RELAXED)
+                .build();
+
+        String json = document.toJson(settings);
+        String[] lines = json.split("\\r?\\n");
+
+        for (String line : lines) {
+            if (line.equals(lastMovMessage)) {
+                continue;
+            }
+
+            MqttMessage mqttMessage = new MqttMessage(line.getBytes());
+            mqttMessage.setQos(1);
+            mqttclient.publish(mqttTopicMov, mqttMessage);
+
+            textArea.append("Published MQTT message to " + mqttTopicMov + ": " + line + "\n");
+            lastMovMessage = line;
         }
     }
 }

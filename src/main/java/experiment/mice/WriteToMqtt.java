@@ -73,7 +73,7 @@ public class WriteToMqtt {
             }
             synchronized (WriteToMqtt.class) {
                 try {
-                    WriteToMqtt.class.wait(20000);
+                    WriteToMqtt.class.wait(5000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -82,6 +82,14 @@ public class WriteToMqtt {
     }
 
     private static JTextArea getjTextArea() {
+
+        // Set Look and Feel to make the UI look more modern
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
+
         // Create the JFrame and buttons
         JFrame frame = new JFrame("Write to MQTT");
         JTextArea textArea = new JTextArea(20, 100);
