@@ -54,7 +54,7 @@ public class MongoToMqtt {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error setting the look and feel", e);
         }
 
         JFrame frame = new JFrame("MQTT Messages");
@@ -78,7 +78,6 @@ public class MongoToMqtt {
             button.setText(running[0] ? "Stop" : "Start");
         });
 
-
         // Connect to the MongoDB replica set
         MongoClient mongoClient = MongoClients.create("mongodb://" + MONGO_ADDRESS + "/?replicaSet=" + MONGO_REPLICA);
         MongoDatabase database = mongoClient.getDatabase(MONGO_DATABASE);
@@ -87,25 +86,48 @@ public class MongoToMqtt {
         MongoCollection<Document> movCollection = database.getCollection(MONGOCOLLECTIONMOV);
         MongoCollection<Document> tempCollection = database.getCollection(MONGOCOLLECTIONTEMP);
 
-        MongoCursor<ChangeStreamDocument<Document>> movCursor = movCollection.watch().iterator();
-        MongoCursor<ChangeStreamDocument<Document>> tempCursor = tempCollection.watch().iterator();
-
-        while (running[0] == true) {
-            if (movCursor.hasNext()) {
-                processMovementData(textArea, movCursor);
+        Thread movThread = new Thread(() -> {
+            MongoCursor<ChangeStreamDocument<Document>> cursor = movCollection.watch().iterator();
+            while (running[0]) {
+                if (cursor.hasNext()) {
+                    try {
+                        processMovementData(textArea, cursor);
+                    } catch (MqttException e) {
+                        logger.log(Level.SEVERE, String.format("Error publishing message: %s", e.getMessage()));
+                    }
+                }
+                // sleep for 10 milliseconds to prevent CPU hogging
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
+            cursor.close();
+        });
 
-            if (tempCursor.hasNext()) {
-                processTemperatureData(textArea, tempCursor);
+        Thread tempThread = new Thread(() -> {
+            MongoCursor<ChangeStreamDocument<Document>> cursor = tempCollection.watch().iterator();
+            while (running[0]) {
+                if (cursor.hasNext()) {
+                    try {
+                        processTemperatureData(textArea, cursor);
+                    } catch (MqttException e) {
+                        logger.log(Level.SEVERE, String.format("Error publishing message: %s", e.getMessage()));
+                    }
+                }
+                // sleep for 10 milliseconds to prevent CPU hogging
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
+            cursor.close();
+        });
 
-            // sleep for 10 milliseconds to prevent CPU hogging
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        movThread.start();
+        tempThread.start();
     }
 
     private static void processTemperatureData(JTextArea textArea, MongoCursor<ChangeStreamDocument<Document>> tempCursor) throws MqttException {
@@ -126,7 +148,7 @@ public class MongoToMqtt {
             MqttMessage mqttMessage = new MqttMessage(line.getBytes());
             mqttMessage.setQos(1);
             mqttclient.publish(mqttTopicTemp, mqttMessage);
-            textArea.append("Published MQTT message to " + mqttTopicTemp + ": " + line + "\n");
+            textArea.append(mqttTopicTemp + ": " + line + "\n");
             lastTempMessage = line;
         }
     }
@@ -157,7 +179,7 @@ public class MongoToMqtt {
             mqttMessage.setQos(1);
             mqttclient.publish(mqttTopicMov, mqttMessage);
 
-            textArea.append("Published MQTT message to " + mqttTopicMov + ": " + line + "\n");
+            textArea.append(mqttTopicMov + ": " + line + "\n");
             lastMovMessage = line;
         }
     }

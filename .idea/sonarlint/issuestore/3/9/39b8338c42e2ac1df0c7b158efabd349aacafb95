@@ -1,31 +1,27 @@
 
 W
-java:S1141r"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ8¤õ¢»ş0
+java:S1141r"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ8Æåùãş0
 
-java:S1488ã"^Immediately return this expression instead of assigning it to the temporary variable "zScore".(Ç¨ÕÕÿÿÿÿÿ8¥õ¢»ş0
-U
-java:S2629Ã"7Use the built-in formatting to construct this argument.(æÅ©ä8¥õ¢»ş0
+java:S1488ä"^Immediately return this expression instead of assigning it to the temporary variable "zScore".(Ç¨ÕÕÿÿÿÿÿ8Èåùãş0
 l
-java:S2095‹"IUse try-with-resources or close this "MongoClient" in a "finally" clause.(õÖÀ¢ûÿÿÿÿ8åõ¢»ş0
+java:S2095‹"IUse try-with-resources or close this "MongoClient" in a "finally" clause.(õÖÀ¢ûÿÿÿÿ8¥æùãş0
 h
-java:S3457v"KFormat specifiers or lambda should be used instead of string concatenation.(‹¾…­8óõ¢»ş0
+java:S3457v"KFormat specifiers or lambda should be used instead of string concatenation.(‹¾…­8°æùãş0
 h
-java:S3457y"KFormat specifiers or lambda should be used instead of string concatenation.(†­Ñ8óõ¢»ş0
+java:S3457y"KFormat specifiers or lambda should be used instead of string concatenation.(†­Ñ8°æùãş0
 P
-java:S1874Œ"-Remove this use of "getDB"; it is deprecated.(øúíŠÿÿÿÿÿ8÷õ¢»ş0
+java:S1874Œ"-Remove this use of "getDB"; it is deprecated.(øúíŠÿÿÿÿÿ8´æùãş0
 O
-java:S1874–",Remove this use of "JSON"; it is deprecated.(ı™ùÿÿÿÿ8øõ¢»ş0
+java:S1874–",Remove this use of "JSON"; it is deprecated.(ı™ùÿÿÿÿ8¶æùãş0
 ]
-java:S1874¥":Remove this use of "JSONParseException"; it is deprecated.(õæÏŞÿÿÿÿÿ8úõ¢»ş0
+java:S1874¨":Remove this use of "JSONParseException"; it is deprecated.(õæÏŞÿÿÿÿÿ8¸æùãş0
 R
-java:S3457«"4Lambda should be used to defer string concatenation.(İŒÆ»8ıõ¢»ş0
+java:S3457®"4Lambda should be used to defer string concatenation.(İŒÆ»8¹æùãş0
 W
-java:S3457®"4Lambda should be used to defer string concatenation.(ô™é‹ıÿÿÿÿ8ıõ¢»ş0
+java:S3457±"4Lambda should be used to defer string concatenation.(ô™é‹ıÿÿÿÿ8ºæùãş0
 i
-java:S3457Ã"KFormat specifiers or lambda should be used instead of string concatenation.(æÅ©ä8ÿõ¢»ş0
-i
-java:S3457Ê"KFormat specifiers or lambda should be used instead of string concatenation.(ÁšÓß8€ö¢»ş0
+java:S3457Ë"KFormat specifiers or lambda should be used instead of string concatenation.(ÁšÓß8¼æùãş0
 X
-java:S1068!"6Remove this unused "MONGOCOLLECTIONOUT" private field.(†Ôşåúÿÿÿÿ8ƒö¢»ş0
+java:S1068!"6Remove this unused "MONGOCOLLECTIONOUT" private field.(†Ôşåúÿÿÿÿ8¾æùãş0
 P
-java:S1144É"-Remove this unused private "logError" method.(ó¾‚ùøÿÿÿÿ8ƒö¢»ş0
+java:S1144Ê"-Remove this unused private "logError" method.(ó¾‚ùøÿÿÿÿ8¾æùãş0

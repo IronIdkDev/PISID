@@ -26,7 +26,7 @@ public class Main {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error setting the look and feel", e);
         }
 
         if (authenticateUser()) {

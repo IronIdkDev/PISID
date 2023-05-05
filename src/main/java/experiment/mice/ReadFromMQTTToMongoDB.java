@@ -39,7 +39,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private final JTextArea documentLabel;
 
     private ReadFromMQTTToMongoDB() {
-        documentLabel = new JTextArea("\n");
+        documentLabel = new JTextArea();
     }
 
     private void createWindow() {
@@ -48,7 +48,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error setting the look and feel", e);
         }
 
         JFrame frame = new JFrame("Cloud to Mongo");
@@ -148,7 +148,6 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     public void messageArrived(String topic, MqttMessage message) {
         try {
             DBObject documentJson = (DBObject) JSON.parse(message.toString());
-            documentLabel.append(message + "\n");
 
             if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
                 if (processTemperatureValues(documentJson)) {
@@ -162,6 +161,10 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             } else if (topic.equals(cloudTopicMov) && mongocolmov != null) {
                 mongocolmov.insert(documentJson);
             }
+
+            documentJson.removeField("_id");
+            documentLabel.append(documentJson + "\n");
+
         } catch (JSONParseException | NumberFormatException e) {
             try {
                 String messageString = new String(message.getPayload());
@@ -192,8 +195,6 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
 
         if (Math.abs(zScore) > 2.0) {
             result = true;
-            logger.log(Level.INFO, "Anomaly detected!! " + document);
-            mongocoltemp.save(document);
         }
         return result;
     }

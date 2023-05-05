@@ -1,56 +1,160 @@
 package experiment.mice;
 
-import javax.swing.*;
 import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
+import org.json.JSONObject;
 
-public class MqttToSql {
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class MqttToSql implements MqttCallback {
+    //MQTT broker and topic information
     private static final String BROKER_URL = "ssl://5893ab818d254bdf8af7ef32f0a96df1.s2.eu.hivemq.cloud:8883";
-    private static String mqttTopicMov = "sensoresMov";
-    private static String mqttTopicTemp = "sensoresTemp";
     private static final String MQTT_USER = "pisid35";
     private static final String MQTT_PASSWORD = "35AhM0@a";
+    private static String mqttTopicMov = "sensoresMov";
+    private static String mqttTopicTemp = "sensoresTemp";
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("MQTT to SQL");
-            JTextArea textArea = new JTextArea(20, 40);
-            textArea.setEditable(false);
-            frame.getContentPane().add(new JScrollPane(textArea));
-            frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    private static final Logger logger = Logger.getLogger(MqttToSql.class.getName());
+    private final JTextArea documentLabel;
 
-            MqttClient mqttClient = null;
-            try {
-                mqttClient = new MqttClient(BROKER_URL, MqttClient.generateClientId());
-                MqttConnectOptions options = new MqttConnectOptions();
-                options.setUserName(MQTT_USER);
-                options.setPassword(MQTT_PASSWORD.toCharArray());
-                options.setCleanSession(true);
-                mqttClient.connect(options);
-                mqttClient.subscribe(mqttTopicMov, (topic, message) -> {
-                    String payload = new String(message.getPayload());
-                    textArea.append(payload + "\n");
-                });
-            } catch (MqttException e) {
-                e.printStackTrace();
-            }
+    private MqttToSql(){
+        documentLabel = new JTextArea();
+    }
 
-            if (mqttClient != null && mqttClient.isConnected()) {
-                try {
-                    mqttClient.disconnect();
-                } catch (MqttException e) {
-                    e.printStackTrace();
-                }
-            }
-            try {
-                if (mqttClient != null) {
-                    mqttClient.close();
-                }
-            } catch (MqttException e) {
-                e.printStackTrace();
+    private void createWindow() {
+        //Set Look and Feel for the UI
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            logger.log(Level.SEVERE, "Error setting the look and feel", e);
+        }
+
+        JFrame frame = new JFrame("MQTT to SQL");
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        JLabel label = new JLabel("Data from broker: ", SwingConstants.CENTER);
+        label.setPreferredSize(new Dimension(600, 30));
+
+        JScrollPane scrollPane = new JScrollPane(documentLabel, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setPreferredSize(new Dimension(600, 200));
+
+        JButton button = new JButton("Stop/Resume");
+        boolean[] isRunning = {true};
+
+        //Add action listener to button to stop/resume message processing
+        button.addActionListener(e -> {
+            isRunning[0] = !isRunning[0];
+            if (isRunning[0]) {
+                button.setText("Stop/Resume");
+            } else {
+                button.setText("Start/Resume");
             }
         });
+
+        frame.getContentPane().add(label, BorderLayout.NORTH);
+        frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
+        frame.getContentPane().add(button, BorderLayout.SOUTH);
+
+        frame.setLocationRelativeTo(null);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    public static void main(String[] args) throws MqttException {
+        MqttToSql mqttToSql = new MqttToSql();
+        mqttToSql.createWindow();
+        mqttToSql.connectToMqttServer(BROKER_URL, mqttTopicMov, mqttTopicTemp, MQTT_USER, MQTT_PASSWORD);
+    }
+
+    private void connectToMqttServer(String broker_url, String mqttTopicMov, String mqttTopicTemp, String username, String password) throws MqttException {
+        final String CLIENT_ID_PREFIX = "CloudToMongo_";
+        final int clientId = 35;
+
+        MqttConnectOptions options = new MqttConnectOptions();
+        options.setUserName(username);
+        options.setPassword(password.toCharArray());
+
+        try (MqttClient mqttClient = new MqttClient(broker_url, CLIENT_ID_PREFIX + clientId + "_" + mqttTopicMov, new MqttDefaultFilePersistence(System.getProperty("user.dir") + File.separator + "tmp"))) {
+            mqttClient.connect(options);
+            mqttClient.setCallback(this);
+            try {
+                mqttClient.subscribe(mqttTopicMov);
+                mqttClient.subscribe(mqttTopicTemp);
+            } catch (MqttException e) {
+                logger.log(Level.SEVERE, "Error subscribing to topics: %s" + e.getMessage());
+            }
+        } catch (MqttException e) {
+            logger.log(Level.WARNING, "Error connecting to MQTT server: %s" + e.getMessage());
+        }
+    }
+
+    @Override
+    public void messageArrived(String topic, MqttMessage message) throws Exception {
+
+        String username = "root";
+        String password = "";
+
+        if (topic.equals(mqttTopicMov)) {
+            String payload = message.toString();
+            JSONObject jsonObj = new JSONObject(payload);
+            String hora = jsonObj.getString("Hour");
+            int from = jsonObj.getInt("from");
+            int to = jsonObj.getInt("to");
+            try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/paginasphp?useSSL=false&allowPublicKeyRetrieval=true", username, password)) {
+                String sql = "INSERT INTO MediçõesPassagens (Hora, SalaEntrada, SalaSaída) VALUES (?, ?, ?)";
+                PreparedStatement stmt = con.prepareStatement(sql);
+                stmt.setString(1, hora);
+                stmt.setInt(2, from);
+                stmt.setInt(3, to);
+                stmt.executeUpdate();
+                logger.log(Level.INFO, "Successfully added the movement message: " + jsonObj);
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, "Error connecting to database: {0}", e.getMessage());
+            }
+        } else if (topic.equals(mqttTopicTemp)) {
+            String payload = message.toString();
+            JSONObject jsonObj = new JSONObject(payload);
+            String hora = jsonObj.getString("Hour");
+            double leitura = jsonObj.getDouble("Leitura");
+            int sensor = jsonObj.getInt("Sensor");
+            int outlier = jsonObj.getInt("Outlier");
+            try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/paginasphp?useSSL=false&allowPublicKeyRetrieval=true", username, password)) {
+                String sql = "INSERT INTO MediçõesTemperatura (Hora, Leitura, Sensor, Outlier) VALUES (?, ?, ?, ?)";
+                PreparedStatement stmt = con.prepareStatement(sql);
+                stmt.setString(1, hora);
+                stmt.setDouble(2, leitura);
+                stmt.setInt(3, sensor);
+                stmt.setInt(4, outlier);
+                stmt.executeUpdate();
+                logger.log(Level.INFO, "Successfully added the temperature message: " + jsonObj);
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, "Error connecting to database: {0}", e.getMessage());
+            }
+        } else {
+            logger.log(Level.WARNING, "Received message on unknown topic: {0}", topic);
+        }
+    }
+
+    @Override
+    public void connectionLost(Throwable cause) {
+        logger.log(Level.WARNING, "Connection to MQTT broker lost. Reason: {0}", cause.getMessage());
+        logger.log(Level.SEVERE, "Stack trace: ", cause);
+    }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken token) {
+        try {
+            logger.log(Level.INFO, "Message delivery complete: {0}", token.getMessage());
+        } catch (MqttException e) {
+            logger.log(Level.SEVERE, "Error getting message from delivery token: {0}", e.getMessage());
+        }
     }
 }
