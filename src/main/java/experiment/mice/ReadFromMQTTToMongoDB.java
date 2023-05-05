@@ -152,8 +152,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
                 if (processTemperatureValues(documentJson)) {
                     documentJson.put(OUTLIER, 1);
-                    DBObject query = new BasicDBObject("_id", documentJson.get("_id"));
-                    mongocoltemp.update(query, documentJson);
+                    mongocoltemp.insert(documentJson);
                 } else {
                     documentJson.put(OUTLIER, 0);
                     mongocoltemp.insert(documentJson);

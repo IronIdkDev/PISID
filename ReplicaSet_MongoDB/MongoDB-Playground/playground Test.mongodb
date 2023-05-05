@@ -1,3 +1,0 @@
-use 'sensores'
-
-db.SensoresMovimento.find({sensor:1})

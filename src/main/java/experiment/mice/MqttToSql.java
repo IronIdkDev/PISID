@@ -98,26 +98,39 @@ public class MqttToSql implements MqttCallback {
 
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-
         String username = "root";
         String password = "";
-
+        String url = "jdbc:mariadb://localhost:3306/pisid";
+        String driver = "com.mysql.jdbc.Driver";
         if (topic.equals(mqttTopicMov)) {
             String payload = message.toString();
             JSONObject jsonObj = new JSONObject(payload);
             String hora = jsonObj.getString("Hour");
             int from = jsonObj.getInt("from");
             int to = jsonObj.getInt("to");
-            try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/paginasphp?useSSL=false&allowPublicKeyRetrieval=true", username, password)) {
+            Connection conn = null;
+            try {
+                Class.forName(driver);
+                conn = DriverManager.getConnection(url, username, password);
                 String sql = "INSERT INTO MediçõesPassagens (Hora, SalaEntrada, SalaSaída) VALUES (?, ?, ?)";
-                PreparedStatement stmt = con.prepareStatement(sql);
+                PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, hora);
                 stmt.setInt(2, from);
                 stmt.setInt(3, to);
                 stmt.executeUpdate();
                 logger.log(Level.INFO, "Successfully added the movement message: " + jsonObj);
+            } catch (ClassNotFoundException e) {
+                logger.log(Level.SEVERE, "Error loading MySQL JDBC driver: {0}", e.getMessage());
             } catch (SQLException e) {
                 logger.log(Level.SEVERE, "Error connecting to database: {0}", e.getMessage());
+            } finally {
+                if (conn != null) {
+                    try {
+                        conn.close();
+                    } catch (SQLException e) {
+                        logger.log(Level.WARNING, "Error closing database connection: {0}", e.getMessage());
+                    }
+                }
             }
         } else if (topic.equals(mqttTopicTemp)) {
             String payload = message.toString();
@@ -125,21 +138,30 @@ public class MqttToSql implements MqttCallback {
             String hora = jsonObj.getString("Hour");
             double leitura = jsonObj.getDouble("Leitura");
             int sensor = jsonObj.getInt("Sensor");
-            int outlier = jsonObj.getInt("Outlier");
-            try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/paginasphp?useSSL=false&allowPublicKeyRetrieval=true", username, password)) {
-                String sql = "INSERT INTO MediçõesTemperatura (Hora, Leitura, Sensor, Outlier) VALUES (?, ?, ?, ?)";
-                PreparedStatement stmt = con.prepareStatement(sql);
+            Connection conn = null;
+            try {
+                Class.forName(driver);
+                conn = DriverManager.getConnection(url, username, password);
+                String sql = "INSERT INTO Temperaturas (Hora, Leitura, Sensor) VALUES (?, ?, ?)";
+                PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, hora);
                 stmt.setDouble(2, leitura);
                 stmt.setInt(3, sensor);
-                stmt.setInt(4, outlier);
                 stmt.executeUpdate();
                 logger.log(Level.INFO, "Successfully added the temperature message: " + jsonObj);
+            } catch (ClassNotFoundException e) {
+                logger.log(Level.SEVERE, "Error loading MySQL JDBC driver: {0}", e.getMessage());
             } catch (SQLException e) {
                 logger.log(Level.SEVERE, "Error connecting to database: {0}", e.getMessage());
+            } finally {
+                if (conn != null) {
+                    try {
+                        conn.close();
+                    } catch (SQLException e) {
+                        logger.log(Level.WARNING, "Error closing database connection: {0}", e.getMessage());
+                    }
+                }
             }
-        } else {
-            logger.log(Level.WARNING, "Received message on unknown topic: {0}", topic);
         }
     }
 
