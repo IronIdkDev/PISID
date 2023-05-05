@@ -96,12 +96,11 @@ public class MqttToSql implements MqttCallback {
         }
     }
 
-    @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         String username = "root";
         String password = "";
         String url = "jdbc:mariadb://localhost:3306/pisid";
-        String driver = "com.mysql.jdbc.Driver";
+        String driver = "org.mariadb.jdbc.Driver";
         if (topic.equals(mqttTopicMov)) {
             String payload = message.toString();
             JSONObject jsonObj = new JSONObject(payload);
@@ -112,13 +111,13 @@ public class MqttToSql implements MqttCallback {
             try {
                 Class.forName(driver);
                 conn = DriverManager.getConnection(url, username, password);
-                String sql = "INSERT INTO MediçõesPassagens (Hora, SalaEntrada, SalaSaída) VALUES (?, ?, ?)";
+                String sql = "INSERT INTO medicoespassagens (Hora, SalaEntrada, SalaSaida) VALUES (?, ?, ?)";
                 PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, hora);
                 stmt.setInt(2, from);
                 stmt.setInt(3, to);
                 stmt.executeUpdate();
-                logger.log(Level.INFO, "Successfully added the movement message: " + jsonObj);
+                documentLabel.append("Mov message added: " + jsonObj + "\n");
             } catch (ClassNotFoundException e) {
                 logger.log(Level.SEVERE, "Error loading MySQL JDBC driver: {0}", e.getMessage());
             } catch (SQLException e) {
@@ -142,13 +141,13 @@ public class MqttToSql implements MqttCallback {
             try {
                 Class.forName(driver);
                 conn = DriverManager.getConnection(url, username, password);
-                String sql = "INSERT INTO Temperaturas (Hora, Leitura, Sensor) VALUES (?, ?, ?)";
+                String sql = "INSERT INTO medicoestemperatura (Hora, Leitura, Sensor) VALUES (?, ?, ?)";
                 PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, hora);
                 stmt.setDouble(2, leitura);
                 stmt.setInt(3, sensor);
                 stmt.executeUpdate();
-                logger.log(Level.INFO, "Successfully added the temperature message: " + jsonObj);
+                documentLabel.append("Temp message added: " + jsonObj + "\n");
             } catch (ClassNotFoundException e) {
                 logger.log(Level.SEVERE, "Error loading MySQL JDBC driver: {0}", e.getMessage());
             } catch (SQLException e) {
