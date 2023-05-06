@@ -30,7 +30,6 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static String mongoAuthentication = "false";
     private static final String MONGOCOLLECTIONMOV = "SensoresMovimento";
     private static final String MONGOCOLLECTIONTEMP = "SensoresTemperatura";
-    private static final String MONGOCOLLECTIONOUT = "Outliers";
     private static final String MONGOCOLLECTIONWRONG = "WrongValues";
     private ArrayList<Double> tempValues = new ArrayList<>();
     private static final String OUTLIER = "Outlier";
@@ -201,8 +200,6 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private void logError(Exception e) {
         logger.log(Level.WARNING, "Error parsing JSON: " + e.getMessage());
     }
-
-
 
     /**
      * Calculates the ZScore for a current value of temperature, taking into consideration the previous temperature values.
