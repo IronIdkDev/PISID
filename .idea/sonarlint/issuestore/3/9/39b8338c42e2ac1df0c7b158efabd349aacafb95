@@ -1,0 +1,25 @@
+
+W
+java:S1141q"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ8´‡Ç÷ş0
+
+java:S1488à"^Immediately return this expression instead of assigning it to the temporary variable "zScore".(Ç¨ÕÕÿÿÿÿÿ8¶‡Ç÷ş0
+l
+java:S2095Š"IUse try-with-resources or close this "MongoClient" in a "finally" clause.(õÖÀ¢ûÿÿÿÿ8°ˆÇ÷ş0
+h
+java:S3457u"KFormat specifiers or lambda should be used instead of string concatenation.(‹¾…­8ÃˆÇ÷ş0
+h
+java:S3457x"KFormat specifiers or lambda should be used instead of string concatenation.(†­Ñ8ÄˆÇ÷ş0
+P
+java:S1874‹"-Remove this use of "getDB"; it is deprecated.(øúíŠÿÿÿÿÿ8ÉˆÇ÷ş0
+O
+java:S1874•",Remove this use of "JSON"; it is deprecated.(ı™ùÿÿÿÿ8ÎˆÇ÷ş0
+]
+java:S1874¦":Remove this use of "JSONParseException"; it is deprecated.(õæÏŞÿÿÿÿÿ8ĞˆÇ÷ş0
+R
+java:S3457¬"4Lambda should be used to defer string concatenation.(İŒÆ»8ÓˆÇ÷ş0
+W
+java:S3457¯"4Lambda should be used to defer string concatenation.(ô™é‹ıÿÿÿÿ8ÔˆÇ÷ş0
+i
+java:S3457É"KFormat specifiers or lambda should be used instead of string concatenation.(ÁšÓß8ØˆÇ÷ş0
+P
+java:S1144È"-Remove this unused private "logError" method.(ó¾‚ùøÿÿÿÿ8İˆÇ÷ş0
