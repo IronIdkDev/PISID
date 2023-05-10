@@ -1,0 +1,18 @@
+
+W
+java:S1141X"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ8êÌâ»ÿ0
+r	java:S117M"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(çíƒ¿ıÿÿÿÿ8ìÌâ»ÿ0
+m
+java:S2095‘"OUse try-with-resources or close this "PreparedStatement" in a "finally" clause.(ĞÀœ¢8¯Ğâ»ÿ0
+l
+java:S2095s"OUse try-with-resources or close this "PreparedStatement" in a "finally" clause.(ĞÀœ¢8°Ğâ»ÿ0
+h
+java:S3457\"KFormat specifiers or lambda should be used instead of string concatenation.(‹¾…­8ğĞâ»ÿ0
+h
+java:S3457_"KFormat specifiers or lambda should be used instead of string concatenation.(†­Ñ8óĞâ»ÿ0
+t
+java:S3776c"RRefactor this method to reduce its Cognitive Complexity from 20 to the 15 allowed.(ß’¬•üÿÿÿÿ8öĞâ»ÿ0
+K
+java:S2115q")Add password protection to this database.(ÌÕû±ıÿÿÿÿ8ŒÑâ»ÿ0
+L
+java:S2115")Add password protection to this database.(ÌÕû±ıÿÿÿÿ8¡Ñâ»ÿ0
