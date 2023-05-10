@@ -10,6 +10,7 @@ import java.awt.*;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -22,6 +23,8 @@ public class WriteToMqtt {
     private static final String HOUR_PREFIX = "{Hour: \"";
     private static final String SENSOR_PREFIX = ", Sensor: ";
     private static final Logger logger = Logger.getLogger(WriteToMqtt.class.getName());
+    private static final LinkedList<String> unsentMessages = new LinkedList<>();
+
 
     static {
         try {
@@ -35,9 +38,21 @@ public class WriteToMqtt {
         try {
             MqttMessage mqttMessage = new MqttMessage();
             mqttMessage.setPayload(message.getBytes());
-            mqttclient.publish(topic, mqttMessage);
+
+            if (mqttclient.isConnected()) {
+                mqttclient.publish(topic, mqttMessage);
+            } else {
+                unsentMessages.add(message);
+            }
         } catch (MqttException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void sendUnsentMessages(String movTopic, String tempTopic) {
+        while (!unsentMessages.isEmpty()) {
+            String message = unsentMessages.removeFirst();
+            publishSensor(message.startsWith("{Hour:") ? tempTopic : movTopic, message);
         }
     }
 
@@ -63,6 +78,8 @@ public class WriteToMqtt {
         JTextArea textArea = getjTextArea();
 
         // Start sending data
+        sendUnsentMessages(movTopic, tempTopic); // Send any unsent messages first
+
         while (running) {
             if (rand.nextDouble() < 0.05) {
                 endExperience(movTopic, formatter, textArea);
