@@ -9,10 +9,13 @@ $username = $user;
 $password = $pass;
 $dbname = "pisid";
 
+if(empty($username) || empty($password)){
+    header("Location: erro.php");
+}
 try {
+    
   // Cria a conexão
   $conn = new mysqli($servername, $username, $password, $dbname);
-
   // Verifica a conexão
   if ($conn->connect_error) {
       throw new Exception("Utilizador ou password incorretos.");

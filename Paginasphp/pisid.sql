@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 04-Maio-2023 às 15:07
+-- Tempo de geração: 06-Maio-2023 às 04:48
 -- Versão do servidor: 10.4.28-MariaDB
 -- versão do PHP: 8.2.4
 
@@ -25,35 +25,6 @@ DELIMITER $$
 --
 -- Procedimentos
 --
-CREATE DEFINER=`root`@`localhost` PROCEDURE `addSalas` (IN `nSalas` INT)   BEGIN
-DECLARE id INT;
-
-SELECT experiencia.IDexperiência INTO id
-FROM experiencia
-ORDER BY experiencia.IDexperiência DESC 
-LIMIT 1;
-
-
-INSERT INTO parâmetrosadicionais (IDExperiência, NúmeroSalas)
-VALUES (id, nSalas);
-
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `Atribui_Odor` (IN `Sala` INT, IN `IDExperiencia` INT, IN `Odor` VARCHAR(5))   BEGIN
-
-INSERT INTO odoresexperiencia ( Sala, IdExperiencia, CodigoOdor)
-VALUES (Sala, IDExperiencia, Odor);
-
-
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `Atribui_Sub` (IN `NumeroRatos` INT, IN `CodigoSubstancia` VARCHAR(5), IN `IDExperiencia` INT)   BEGIN
-
-INSERT INTO substanciaexperiencia ( NumeroRatos, CodigoSubstancia, IDexperiencia)
-VALUES (NumeroRatos, CodigoSubstancia, IDExperiencia);
-
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `AtualizaExperiencia` (IN `IDExperiencia` INT)   BEGIN
 
 DECLARE ativo INT;
@@ -62,25 +33,20 @@ DECLARE counter INT;
 SELECT Ativa INTO ativo FROM experiencia WHERE experiencia.IDexperiência = IDExperiencia;
 
 
-IF ativo = 1 THEN
-	UPDATE experiencia SET Ativa = 0 WHERE experiencia.IDexperiência = IDExperiencia;
+IF ativo = 0 THEN
+	UPDATE experiencia SET Ativa = 1 WHERE experiencia.IDexperiência = IDExperiencia;
     
     
-    ELSE
+    ELSEIF ativo = 2 THEN
+	UPDATE experiencia SET Ativa = -1 WHERE experiencia.IDexperiência = IDExperiencia;
     
-    SELECT COUNT(*) INTO count FROM experiencia WHERE Ativa = 1;
     
-	SELECT COUNT(*) INTO counter FROM medicoespassagens WHERE medicoespassagens.IDExperiência = IDExperiencia;
+    ELSEIF ativo = -1 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Esta experiência já foi finalizada';
 
-	IF (count > 0 OR counter > 0) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Já há uma experiência ativa ou esta experiência já aconteceu';
-    ELSEIF (count = 0 AND counter =0) THEN
-    	UPDATE experiencia SET experiencia.Ativa = 1 WHERE experiencia.IDexperiência = IDExperiencia;
     END IF;
-
-END IF;
-
-
+    
+   
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `Criar_Experiencia` (IN `descricao` TEXT, IN `investigador` VARCHAR(50), IN `nratos` INT(11), IN `limitesRatos` INT(11), IN `segSemMovi` INT(11), IN `tempIdeal` DECIMAL(4,2), IN `variacaoMax` DECIMAL(4,2))   BEGIN
@@ -90,7 +56,11 @@ DECLARE count INT;
 SELECT COUNT(*) INTO count FROM experiencia;
 
 INSERT INTO experiencia (IDexperiência, Descricao, Investigador, DataHora, NumeroRatos,LimiteRatosSala, SegundosSemMovimento, TemperaturaIdeal, VariacaoTemperaturaMaxima, Ativa)
-VALUES (count+1, descricao, investigador, current_timestamp() , nratos, limitesRatos,  segSemMovi, tempIdeal, variacaoMax, 0);
+VALUES (count, descricao, investigador, current_timestamp() , nratos, limitesRatos,  segSemMovi, tempIdeal, variacaoMax, 0);
+
+
+INSERT INTO parâmetrosadicionais(IDExperiência, NúmeroSalas)
+VALUES (count, 10);
 
 END$$
 
@@ -101,7 +71,7 @@ VALUES (Nome,Telefone,TipoUtilizador,Email,true,0);
 
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `Cria_Medicao_Temp` (IN `leitura` DECIMAL, IN `sensor` INT, IN `outlier` TINYINT)   BEGIN 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Cria_Medicao_Temp` (IN `leitura` DECIMAL, IN `sensor` INT, IN `outlier` TINYINT, IN `datahora` TIMESTAMP)   BEGIN 
 
 DECLARE count INT;
 DECLARE id INT;
@@ -111,18 +81,18 @@ SELECT COUNT(*) INTO count FROM medicoestemperatura;
 
 SELECT COUNT(*) INTO counter 
 FROM experiencia
-WHERE experiencia.Ativa = 1;
+WHERE experiencia.Ativa = 2;
 
 IF(counter = 0)THEN
 SET id = 0;
 ELSE 
 SELECT experiencia.IDexperiência INTO id
 FROM experiencia
-WHERE experiencia.Ativa = 1;
+WHERE experiencia.Ativa = 2;
 END IF;
 
 INSERT INTO medicoestemperatura (IDMedicao, Hora, Leitura, Sensor, IDExperiência,Outlier)
-    VALUES (count +1,current_timestamp(), leitura,sensor,id,outlier); 
+    VALUES (count +1,datahora, leitura,sensor,id,outlier); 
 
 
 
@@ -130,7 +100,7 @@ INSERT INTO medicoestemperatura (IDMedicao, Hora, Leitura, Sensor, IDExperiênci
 
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `Cria_Movimentacao` (IN `SalaEntrada` INT, IN `SalaSaida` INT)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Cria_Movimentacao` (IN `SalaEntrada` INT, IN `SalaSaida` INT, IN `datahora` TIMESTAMP)   BEGIN
 
 DECLARE count INT;
 DECLARE id INT;
@@ -139,24 +109,27 @@ SELECT COUNT(*) INTO count FROM medicoespassagens;
 
 SELECT COUNT(*) INTO counter 
 FROM experiencia
-WHERE experiencia.Ativa = 1;
+WHERE experiencia.Ativa = 2;
 
 IF(counter = 0)THEN
-SET id = 0;
-ELSE 
+	IF(SalaEntrada = 0 AND SalaSaida =0)THEN
+SELECT experiencia.IDexperiência INTO id 
+		FROM experiencia 
+		WHERE Ativa = 1 
+		ORDER BY DataHora LIMIT 1;
+ELSE
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Este movimento é inválido';
+        END IF;
+ELSE
 SELECT experiencia.IDexperiência INTO id
 FROM experiencia
-WHERE experiencia.Ativa = 1;
-
-	IF(SalaEntrada = 0 AND SalaSaida = 0)THEN
-		UPDATE experiencia SET Ativa = 0 WHERE experiencia.IDexperiência = id;
-    END IF;
+WHERE experiencia.Ativa = 2
+LIMIT 1;
 
 END IF;
 
 INSERT INTO medicoespassagens (IdMedicao, Hora, SalaEntrada, SalaSaida, IDExperiência)
-    VALUES (count +1,current_timestamp(), SalaEntrada,SalaSaida,id); 
-
+    VALUES (count +1,datahora, SalaEntrada,SalaSaida,id); 
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `Cria_Odor` (IN `sala` INT, IN `idexperiencia` INT, IN `codigoOdor` VARCHAR(10))   BEGIN
@@ -272,7 +245,9 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `Mostrar_Outros_Users` (IN `user` VA
 
 SELECT utilizador.NomeUtilizador, utilizador.TelefoneUtilizador, utilizador.TipoUtilizador, utilizador.EmailUtilizador,utilizador.Ativo 
 FROM utilizador 
-Where utilizador.EmailUtilizador <> user;
+Where utilizador.EmailUtilizador <> user
+AND utilizador.EmailUtilizador <> 'default';
+
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `Mostrar_User` (IN `userID` VARCHAR(50))   BEGIN
@@ -367,20 +342,14 @@ WHERE substanciaexperiencia.IDexperiencia = experienciaID;
 
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `Obter_Ultima_Medicao_Movimento` (IN `IDExperiencia` INT)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Mostra_Todas_Experiencias` ()   BEGIN
 
-select *
-from medicoespassagens
-Where medicoespassagens.IDExperiência = IDExperiencia
-ORDER BY id DESC LIMIT 1;
+SELECT *
+FROM experiencia
+WHERE experiencia.IDexperiência <> 0;
+
 
 END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `Obter_Ultima_Medicao_Temperatura` (IN `IDExperiencia` INT)   select *
-from medicoestemperatura 
-WHERE medicoestemperatura.IDExperiência = IDExperiencia
-ORDER BY medicoestemperatura.IDMedicao 
-DESC LIMIT 1$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `Return_Salas_Utilizadas` (IN `id` INT)   BEGIN
 
@@ -516,22 +485,12 @@ END$$
 CREATE DEFINER=`root`@`localhost` FUNCTION `verifyExperiencia` (`id` INT) RETURNS INT(11)  BEGIN
 
 DECLARE ativo INT;
-DECLARE c INT;
-DECLARE d INT;
 
 SELECT experiencia.Ativa INTO ativo
 FROM experiencia
 WHERE experiencia.IDexperiência = id;
 
-SELECT COUNT(*) INTO c 
-FROM medicoestemperatura 
-WHERE medicoestemperatura.IDExperiência = id;
-
-SELECT COUNT(*) INTO d
-FROM medicoespassagens
-WHERE medicoespassagens.IDExperiência = id;
-
-RETURN ativo + c+ d;
+RETURN ativo;
 
 END$$
 
@@ -560,7 +519,28 @@ CREATE TABLE `alerta` (
 --
 
 INSERT INTO `alerta` (`IDAlerta`, `Hora`, `Sala`, `Sensor`, `Leitura`, `TipoAlerta`, `Mensagem`, `horaescrita`, `IDExperiência`) VALUES
-(1, '2023-05-03 11:28:07', 1, 0, 0.00, 'Limite de ratos', 'O limite de ratos de uma sala da experiência foi ultrapassado', '2023-05-03 11:28:07', 2);
+(1, '2023-05-05 20:46:51', 0, 0, 0.00, 'BRANCO', 'A sua experiência foi iniciada', '2023-05-05 20:46:51', 1),
+(2, '2023-05-05 20:52:09', 0, 0, 0.00, 'BRANCO', 'A sua experiência foi iniciada', '2023-05-05 20:52:09', 1),
+(3, '2023-05-04 12:25:59', 0, 2, 18.00, 'AMARELO', 'A temperatura na experiência está fora dos limites', '2023-05-05 21:29:51', 1),
+(4, '2023-05-04 13:25:59', 0, 2, 14.00, 'VERMELHO', 'A temperatura na experiência está muito fora dos limites', '2023-05-05 21:30:45', 1),
+(5, '2023-05-05 22:24:01', 0, 0, 0.00, 'BRANCO', 'A sua experiência foi iniciada', '2023-05-05 22:24:01', 2),
+(6, '2023-05-05 22:26:56', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-05 22:26:56', 0),
+(7, '2023-05-05 22:26:56', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-05 22:26:56', 1),
+(8, '2023-05-05 22:26:56', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-05 22:26:56', 2),
+(9, '2023-05-05 22:27:23', 0, 0, 0.00, 'BRANCO', 'A sua experiência foi iniciada', '2023-05-05 22:27:23', 2),
+(10, '2023-05-05 22:27:59', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-05 22:27:59', 2),
+(11, '2023-05-05 22:28:23', 0, 0, 0.00, 'BRANCO', 'A sua experiência foi iniciada', '2023-05-05 22:28:23', 2),
+(12, '2023-05-05 22:29:06', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-05 22:29:06', 2),
+(13, '2023-05-05 22:31:19', 0, 0, 0.00, 'BRANCO', 'A sua experiência foi iniciada', '2023-05-05 22:31:19', 2),
+(14, '2023-05-05 22:31:25', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-05 22:31:25', 2),
+(15, '2023-05-06 02:14:05', 0, 0, 0.00, 'BRANCO', 'A sua experiência foi iniciada', '2023-05-06 02:14:05', 1),
+(16, '2023-05-06 02:14:15', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-06 02:14:15', 1),
+(17, '2023-05-06 02:16:30', 0, 0, 0.00, 'BRANCO', 'A sua experiência foi iniciada', '2023-05-06 02:16:30', 3),
+(18, '2023-05-06 02:16:55', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-06 02:16:55', 3),
+(19, '2023-05-06 02:48:40', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-06 02:48:40', 0),
+(20, '2023-05-06 02:48:40', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-06 02:48:40', 1),
+(21, '2023-05-06 02:48:40', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-06 02:48:40', 2),
+(22, '2023-05-06 02:48:40', 0, 0, 0.00, 'VERMELHO', 'A sua experiência foi terminada', '2023-05-06 02:48:40', 3);
 
 -- --------------------------------------------------------
 
@@ -578,7 +558,7 @@ CREATE TABLE `experiencia` (
   `SegundosSemMovimento` int(11) NOT NULL,
   `TemperaturaIdeal` decimal(4,2) NOT NULL,
   `VariacaoTemperaturaMaxima` decimal(4,2) NOT NULL,
-  `Ativa` tinyint(1) NOT NULL
+  `Ativa` int(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -586,12 +566,67 @@ CREATE TABLE `experiencia` (
 --
 
 INSERT INTO `experiencia` (`IDexperiência`, `Descricao`, `Investigador`, `DataHora`, `NumeroRatos`, `LimiteRatosSala`, `SegundosSemMovimento`, `TemperaturaIdeal`, `VariacaoTemperaturaMaxima`, `Ativa`) VALUES
-(0, 'Experiência default. Recebe dados que não pertencem a nenhuma experiência', 'default', '2023-05-02 13:06:04', 0, 0, 0, 0.00, 0.00, 0),
-(2, 'Nova experiencia', 'bruno@gmail.com', '2023-05-03 11:10:58', 5, 2, 3, 14.00, 2.00, 0);
+(0, 'Experiência default. Recebe dados que não pertencem a nenhuma experiência', 'default', '2023-05-02 13:06:04', 0, 0, 0, 0.00, 0.00, -1),
+(1, 'ggg', 'bruno@gmail.com', '2023-05-05 20:46:38', 12, 2, 45, 23.00, 3.00, -1),
+(2, 'teste', 'bruno@gmail.com', '2023-05-05 22:18:35', 12, 2, 45, 23.00, 3.00, -1),
+(3, 'Edição boa', 'carapinhzzz@gmail.com', '2023-05-05 22:39:50', 12, 2, 30, 20.00, 3.00, -1);
 
 --
 -- Acionadores `experiencia`
 --
+DELIMITER $$
+CREATE TRIGGER `add_Salas` AFTER INSERT ON `experiencia` FOR EACH ROW BEGIN
+
+DECLARE i INT;
+DECLARE j INT;
+DECLARE counter INT;
+SET j = 10;
+SET i = 1;
+SET counter = new.NumeroRatos;
+
+WHILE (i <= j )DO
+
+IF(i = 1)THEN
+	INSERT INTO medicoessalas (IDExperiencia, NumeroRatosFinal,Sala) 
+    VALUES (new.IDExperiência, new.NumeroRatos, i);
+    ELSE
+	INSERT INTO medicoessalas (IDExperiencia, NumeroRatosFinal,Sala) 
+    VALUES (new.IDExperiência, 0, i);
+    END IF;
+    SET i = i + 1;
+END WHILE;
+
+
+
+
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `alerta_experiencia` AFTER UPDATE ON `experiencia` FOR EACH ROW BEGIN
+
+DECLARE counter INT;
+
+SELECT COUNT(*) INTO counter
+FROM alerta;
+
+IF(new.Ativa = 2)THEN
+
+INSERT INTO alerta(alerta.IDAlerta,alerta.Hora,alerta.TipoAlerta,alerta.Mensagem,IDexperiência)
+VALUES(counter+1, current_timestamp(), 'BRANCO', 'A sua experiência foi iniciada', new.IDexperiência);
+
+
+ELSEIF(new.Ativa = -1)THEN
+INSERT INTO 
+alerta(alerta.IDAlerta,alerta.Hora,alerta.TipoAlerta,alerta.Mensagem,IDexperiência)
+VALUES(counter+1, current_timestamp(), 'VERMELHO', 'A sua experiência foi terminada', new.IDexperiência);
+
+END IF;
+
+
+END
+$$
+DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `contaExperiencia` AFTER INSERT ON `experiencia` FOR EACH ROW BEGIN
   DECLARE experiencias INT;
@@ -636,22 +671,101 @@ CREATE TABLE `medicoespassagens` (
 --
 
 INSERT INTO `medicoespassagens` (`IdMedicao`, `Hora`, `SalaEntrada`, `SalaSaida`, `IDExperiência`) VALUES
-(1, '2023-05-04 12:58:43', 0, 0, 2);
+(1, '2023-09-04 12:25:59', 5, 4, 0),
+(2, '2023-05-04 13:25:59', 7, 6, 0),
+(3, '2023-05-04 12:25:59', 5, 6, 0),
+(4, '2023-09-04 12:25:59', 0, 0, 1),
+(5, '2023-05-04 13:25:59', 2, 1, 1),
+(6, '2023-05-04 12:25:59', 5, 6, 0),
+(7, '2023-05-04 12:25:59', 0, 0, 2),
+(8, '2023-05-04 13:25:59', 0, 0, 1),
+(9, '2023-05-04 13:25:59', 0, 0, 3),
+(10, '2023-09-04 12:25:59', 2, 1, 3);
 
 --
 -- Acionadores `medicoespassagens`
 --
 DELIMITER $$
-CREATE TRIGGER `passagemRatos` AFTER INSERT ON `medicoespassagens` FOR EACH ROW BEGIN
-DECLARE count INT;
+CREATE TRIGGER `Ativa_Experiencia` AFTER INSERT ON `medicoespassagens` FOR EACH ROW BEGIN
+
 DECLARE counter INT;
+DECLARE id INT;
 
-SET count = (SELECT NumeroRatosFinal FROM medicoessalas WHERE Sala = new.SalaEntrada);
-SET counter = (SELECT NumeroRatosFinal FROM medicoessalas WHERE Sala = new.SalaSaida);
+SELECT COUNT(*) INTO counter
+FROM experiencia
+WHERE experiencia.Ativa = 2;
 
-UPDATE medicoessalas SET NumeroRatosFinal = count + 1 WHERE Sala = new.SalaEntrada AND medicoessalas.IDExperiencia = new.IDExperiência;
-UPDATE medicoessalas SET NumeroRatosFinal = counter - 1 WHERE Sala = new.SalaSaida AND medicoessalas.IDExperiencia
- = new.IDExperiência;
+
+IF( new.SalaSaida = 0 AND new.SalaEntrada = 0)THEN
+
+	IF(counter = 0)THEN
+    
+		SELECT experiencia.IDexperiência INTO id 
+		FROM experiencia 
+		WHERE Ativa = 1 
+		ORDER BY DataHora LIMIT 1;
+
+		UPDATE experiencia set experiencia.Ativa = 2
+		WHERE experiencia.IDexperiência = id;
+        
+	ELSE 
+    	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Dado não adicionado';
+
+END IF;
+
+END IF;
+
+
+
+
+
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `VerificaPassagemRatos` BEFORE INSERT ON `medicoespassagens` FOR EACH ROW BEGIN
+
+DECLARE number INT;
+
+SELECT medicoessalas.NumeroRatosFinal INTO number
+FROM medicoessalas
+WHERE medicoessalas.Sala = new.SalaSaida
+AND medicoessalas.IDExperiencia = new.IDExperiência;
+
+IF(number = 0)THEN
+
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Não é possível adicionar esta passagem'; 
+    
+    END IF;
+
+
+
+
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `passagemRatos` AFTER INSERT ON `medicoespassagens` FOR EACH ROW BEGIN 
+
+DECLARE count INT; 
+
+DECLARE counter INT; 
+
+  
+
+SET count = (SELECT NumeroRatosFinal FROM medicoessalas WHERE Sala = new.SalaEntrada 
+             AND medicoessalas.IDExperiencia = new.IDExperiência); 
+
+SET counter = (SELECT NumeroRatosFinal FROM medicoessalas WHERE Sala = new.SalaSaida
+              AND medicoessalas.IDExperiencia = new.IDExperiência); 
+
+  
+
+UPDATE medicoessalas SET NumeroRatosFinal = count + 1 WHERE Sala = new.SalaEntrada AND medicoessalas.IDExperiencia = new.IDExperiência; 
+
+UPDATE medicoessalas SET NumeroRatosFinal = counter - 1 WHERE Sala = new.SalaSaida AND medicoessalas.IDExperiencia 
+= new.IDExperiência; 
+
 END
 $$
 DELIMITER ;
@@ -673,13 +787,42 @@ CREATE TABLE `medicoessalas` (
 --
 
 INSERT INTO `medicoessalas` (`IDExperiencia`, `NumeroRatosFinal`, `Sala`) VALUES
-(2, 2, 3);
+(1, 11, 1),
+(1, 1, 2),
+(1, 0, 3),
+(1, 0, 4),
+(1, 0, 5),
+(1, 0, 6),
+(1, 0, 7),
+(1, 0, 8),
+(1, 0, 9),
+(1, 0, 10),
+(2, 12, 1),
+(2, 0, 2),
+(2, 0, 3),
+(2, 0, 4),
+(2, 0, 5),
+(2, 0, 6),
+(2, 0, 7),
+(2, 0, 8),
+(2, 0, 9),
+(2, 0, 10),
+(3, 11, 1),
+(3, 1, 2),
+(3, 0, 3),
+(3, 0, 4),
+(3, 0, 5),
+(3, 0, 6),
+(3, 0, 7),
+(3, 0, 8),
+(3, 0, 9),
+(3, 0, 10);
 
 --
 -- Acionadores `medicoessalas`
 --
 DELIMITER $$
-CREATE TRIGGER `verificaUpdateRatos` BEFORE UPDATE ON `medicoessalas` FOR EACH ROW BEGIN
+CREATE TRIGGER `verificaUpdateRatos` AFTER UPDATE ON `medicoessalas` FOR EACH ROW BEGIN
 
 DECLARE count INT;
 DECLARE id INT;
@@ -690,16 +833,29 @@ DECLARE descricao TEXT;
 SET sala = new.Sala;
 SET id = new.IDExperiencia;
 
-SELECT experiencia.NumeroRatos INTO ratosSala
+SELECT experiencia.LimiteRatosSala INTO ratosSala
 FROM experiencia
 WHERE experiencia.IDexperiência = id; 
 
 
-IF(new.NumeroRatosFinal >= ratosSala)THEN
+IF(new.NumeroRatosFinal > ratosSala AND sala <> 1)THEN
 	SELECT COUNT(*) INTO count FROM alerta;
+    
+    IF(new.NumeroRatosFinal - ratosSala < 3)THEN
+    INSERT INTO alerta (IDAlerta, Hora, Sala, TipoAlerta,Mensagem,horaescrita,IDExperiência)
+	VALUES (count +1, current_timestamp(),  sala, 'AMARELO','O limite de ratos de uma sala da experiência foi ultrapassado',current_timestamp(), id );  
+	
+    ELSE
+    
 	INSERT INTO alerta (IDAlerta, Hora, Sala, TipoAlerta,Mensagem,horaescrita,IDExperiência)
-	VALUES (count +1, current_timestamp(),  sala, 'Limite de ratos','O limite de ratos de uma sala da experiência foi ultrapassado',current_timestamp(), id );  
+	VALUES (count +1, current_timestamp(),  sala, 'VERMELHO','O limite de ratos de uma sala da experiência foi ultrapassado',current_timestamp(), id );  
+    
+    UPDATE experiencia SET experiencia.Ativa = -1 
+    WHERE experiencia.IDexperiência = id;
+    
+    
 END IF;
+end if;
 
 END
 $$
@@ -725,7 +881,10 @@ CREATE TABLE `medicoestemperatura` (
 --
 
 INSERT INTO `medicoestemperatura` (`IDMedicao`, `Hora`, `Leitura`, `Sensor`, `IDExperiência`, `Outlier`) VALUES
-(1, '2023-05-04 10:45:27', 9.00, 23, 2, 1);
+(1, '2023-05-04 13:25:59', 19.00, 2, 1, 0),
+(2, '2023-05-04 12:25:59', 18.00, 2, 1, 0),
+(3, '2023-05-04 12:25:59', 17.00, 2, 1, 0),
+(4, '2023-05-04 13:25:59', 1.00, 2, 1, 0);
 
 --
 -- Acionadores `medicoestemperatura`
@@ -733,44 +892,48 @@ INSERT INTO `medicoestemperatura` (`IDMedicao`, `Hora`, `Leitura`, `Sensor`, `ID
 DELIMITER $$
 CREATE TRIGGER `criarAlertaTemp` AFTER INSERT ON `medicoestemperatura` FOR EACH ROW BEGIN
 
-DECLARE tempIdeal DECIMAL;
-DECLARE variacaoTemp DECIMAL;
-DECLARE tempSub DECIMAL;
-DECLARE tempUlt DECIMAL;
 DECLARE media DECIMAL;
 DECLARE id INT;
-DECLARE count INT;
 
-SELECT experiencia.IDexperiência INTO id
-FROM experiencia
-WHERE experiencia.Ativa = 1 AND experiencia.IDexperiência = new.IDExperiência;
+DECLARE tempIdeal DECIMAL;
+DECLARE tempSup DECIMAL;
+DECLARE tempInf DECIMAL;
+DECLARE varTemp DECIMAL;
+DECLARE idAlerta INT;
+
+SET id = new.IDExperiência;
+
+SELECT COUNT(*) INTO idAlerta
+FROM alerta;
 
 SELECT experiencia.TemperaturaIdeal INTO tempIdeal
 FROM experiencia
-WHERE experiencia.IDexperiência = new.IDExperiência;
+WHERE experiencia.IDexperiência = id;
 
-SELECT experiencia.VariacaoTemperaturaMaxima INTO variacaoTemp
+SELECT experiencia.VariacaoTemperaturaMaxima INTO varTemp
 FROM experiencia
-WHERE experiencia.IDexperiência = new.IDExperiência;
+WHERE experiencia.IDexperiência = id;
 
-SET tempSub = tempIdeal - variacaoTemp;
-SET tempUlt = tempIdeal + variacaoTemp;
-
-SELECT AVG(Leitura) INTO media
-FROM(
-SELECT medicoestemperatura.Leitura
-FROM medicoestemperatura
-WHERE medicoestemperatura.IDExperiência = id AND medicoestemperatura.Outlier = 0
-ORDER BY medicoestemperatura.Hora DESC
-LIMIT 3
-) AS ultimas_medicoes;
-
-IF (media < tempSub OR media > tempUlt) THEN
-SELECT COUNT(*) INTO count FROM alerta;
-INSERT INTO alerta (IDAlerta, Hora, Sensor, Leitura, TipoAlerta, Mensagem, horaescrita, IDExperiência)
-VALUES (count + 1, current_timestamp(), new.Sensor, media, 'Alerta Temperatura', 'O intervalo de temperatura não foi verificado nas últimas 3 medições', current_timestamp(), id);
-END IF;
-
+SET tempInf = tempIdeal - varTemp;
+SET tempSup = tempIdeal + varTemp;
+IF(SELECT COUNT(*) FROM medicoestemperatura WHERE medicoestemperatura.Outlier = 0 GROUP BY id HAVING COUNT(*) >= 3)THEN
+    SELECT AVG(Leitura) INTO media
+	FROM medicoestemperatura
+    WHERE medicoestemperatura.Outlier = 0
+	GROUP BY id
+	HAVING COUNT(*) >= 3;  
+    IF(media > tempSup OR media < tempInf)THEN
+    
+    	IF( media -tempSup >=3 OR tempInf - media >= 3)THEN
+    	INSERT INTO alerta(IDAlerta, Hora, Sensor, Leitura, TipoAlerta, Mensagem, horaescrita, IDExperiência)
+    VALUES(idAlerta+1, new.Hora, new.Sensor, media, 'VERMELHO', 'A temperatura na experiência está muito fora dos limites', current_timestamp(), id);
+    UPDATE experiencia SET experiencia.Ativa = -1 WHERE experiencia.IDexperiência = id;
+    ELSE
+        	INSERT INTO alerta(IDAlerta, Hora, Sensor, Leitura, TipoAlerta, Mensagem, horaescrita, IDExperiência)
+    VALUES(idAlerta+1, new.Hora, new.Sensor, media, 'AMARELO', 'A temperatura na experiência está fora dos limites', current_timestamp(), id);  
+    	END IF;
+    END IF;
+END if;
 END
 $$
 DELIMITER ;
@@ -793,8 +956,8 @@ CREATE TABLE `odoresexperiencia` (
 --
 
 INSERT INTO `odoresexperiencia` (`Sala`, `IdExperiencia`, `CodigoOdor`, `IDMedicao`) VALUES
-(2, 2, 'lll', 1),
-(1, 2, 'rrr', 2);
+(3, 3, 'mmm', 1),
+(1, 3, 'qqq', 2);
 
 --
 -- Acionadores `odoresexperiencia`
@@ -833,32 +996,9 @@ CREATE TABLE `parâmetrosadicionais` (
 --
 
 INSERT INTO `parâmetrosadicionais` (`IDExperiência`, `NúmeroSalas`) VALUES
-(2, 3);
-
---
--- Acionadores `parâmetrosadicionais`
---
-DELIMITER $$
-CREATE TRIGGER `addSalas` AFTER INSERT ON `parâmetrosadicionais` FOR EACH ROW BEGIN
-
-DECLARE i INT;
-DECLARE j INT;
-
-SET j = new.NúmeroSalas;
-SET i = 1;
-
-WHILE (i <= j )DO
-	INSERT INTO medicoessalas (IDExperiencia, NumeroRatosFinal,Sala) 
-    VALUES (new.IDExperiência, 0, i);
-    SET i = i + 1;
-END WHILE;
-
-
-
-
-END
-$$
-DELIMITER ;
+(1, 10),
+(2, 10),
+(3, 10);
 
 -- --------------------------------------------------------
 
@@ -878,7 +1018,7 @@ CREATE TABLE `substanciaexperiencia` (
 --
 
 INSERT INTO `substanciaexperiencia` (`NumeroRatos`, `CodigoSubstancia`, `IDexperiencia`, `IDMedicao`) VALUES
-(1, 'err', 2, 2);
+(2, 'eee', 3, 1);
 
 -- --------------------------------------------------------
 
@@ -901,7 +1041,8 @@ CREATE TABLE `utilizador` (
 
 INSERT INTO `utilizador` (`NomeUtilizador`, `TelefoneUtilizador`, `TipoUtilizador`, `EmailUtilizador`, `Ativo`, `NúmeroExperiências`) VALUES
 ('Alice', '910349808', 'TEC', 'alice@gmail.com', 1, 0),
-('Bruno', '999999999', 'INV', 'bruno@gmail.com', 1, 1),
+('Bruno', '999999999', 'INV', 'bruno@gmail.com', 1, 26),
+('Carapinhzzz', '999443310', 'INV', 'carapinhzzz@gmail.com', 1, 2),
 ('Default', '000000000', 'INV', 'default', 1, 1),
 ('Vasco', '910349086', 'ADM', 'vasquinho@iscte-iu.pt', 1, 0);
 
@@ -928,7 +1069,7 @@ ALTER TABLE `experiencia`
 --
 ALTER TABLE `medicoespassagens`
   ADD PRIMARY KEY (`IdMedicao`),
-  ADD KEY `IDExperiência` (`IDExperiência`);
+  ADD KEY `IDExperiência` (`IDExperiência`) USING BTREE;
 
 --
 -- Índices para tabela `medicoessalas`
@@ -979,7 +1120,7 @@ ALTER TABLE `utilizador`
 -- AUTO_INCREMENT de tabela `alerta`
 --
 ALTER TABLE `alerta`
-  MODIFY `IDAlerta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `IDAlerta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT de tabela `experiencia`
@@ -991,7 +1132,7 @@ ALTER TABLE `experiencia`
 -- AUTO_INCREMENT de tabela `medicoespassagens`
 --
 ALTER TABLE `medicoespassagens`
-  MODIFY `IdMedicao` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `IdMedicao` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de tabela `medicoestemperatura`
@@ -1050,6 +1191,20 @@ ALTER TABLE `parâmetrosadicionais`
 --
 ALTER TABLE `substanciaexperiencia`
   ADD CONSTRAINT `substanciaexperiencia_ibfk_1` FOREIGN KEY (`IDexperiencia`) REFERENCES `experiencia` (`IDexperiência`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+DELIMITER $$
+--
+-- Eventos
+--
+CREATE DEFINER=`root`@`localhost` EVENT `ControllerExperiencia` ON SCHEDULE EVERY 10 SECOND STARTS '2023-05-05 23:30:45' ON COMPLETION NOT PRESERVE ENABLE DO UPDATE experiencia e
+  JOIN medicoespassagens m ON e.IDexperiência = m.IDexperiência
+  SET e.Ativa = -1
+  WHERE TIMESTAMPADD(SECOND, e.SegundosSemMovimento, m.Hora) < NOW()
+  AND e.Ativa = 2$$
+
+CREATE DEFINER=`root`@`localhost` EVENT `EndingExperiencia` ON SCHEDULE EVERY 30 SECOND STARTS '2023-05-06 03:48:40' ON COMPLETION NOT PRESERVE ENABLE DO UPDATE Experiencia SET Ativa = -1 WHERE TIMESTAMPDIFF(MINUTE, DataHora, NOW()) > 10$$
+
+DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -26,6 +26,9 @@ $id = $_SESSION['id'];
 	</form>
 
 <?php
+if(empty($username) || empty($password) || empty($id)){
+    header("Location: erro.php");
+}
 // Cria a conexão
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -33,6 +36,20 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
 	die("Conexão falhou: " . $conn->connect_error);
 }
+// Nome da funntion
+$functionTipo = "Mostra_Tipo_User";
+// Prepara a function
+$stmtTipo = $conn->prepare("SELECT $functionTipo(?) AS resultado");
+// Define o valor do parâmetro da function
+$stmtTipo->bind_param('s', $username);
+// Faz a consulta
+$stmtTipo->execute();
+// Obtém o resultado da consulta
+$resultTipo = $stmtTipo->get_result();
+// Guarda o valor retornado pela function
+$resultadoTipo = $resultTipo->fetch_assoc()['resultado'];	
+
+
 		// Realizar a consulta
 		if(isset($_POST["submitExperiencias"])) {
 
@@ -54,7 +71,7 @@ if ($conn->connect_error) {
 				}
 				echo "</table>";
 			}else {
-				echo"Não foram encontrados dados de passagens relativo a esta experiência";
+				echo"\nNão foram encontrados dados de passagens relativo a esta experiência";
 			}
 
 
@@ -82,7 +99,7 @@ if ($conn->connect_error) {
                 }
                 echo "</table>";
 			}else {
-				echo"Não foram encontrados dados de odores relativo a esta experiência";
+				echo"\nNão foram encontrados dados de odores relativo a esta experiência";
 			}
 
 			while ($conn->next_result()) {
@@ -107,7 +124,7 @@ if ($conn->connect_error) {
 			}
                echo "</table>";
 			}else {
-				echo"Não foram encontrados dados de substâncias relativo a esta experiência";
+				echo"\nNão foram encontrados dados de substâncias relativo a esta experiência";
 
 			}
 			while ($conn->next_result()) {
@@ -129,7 +146,7 @@ if ($conn->connect_error) {
                 }
                echo "</table>";
 			} else {
-				echo"Não foram encontrados alertas relativo a esta experiência";
+				echo"\nNão foram encontrados alertas relativo a esta experiência";
 
 			}
 
@@ -146,12 +163,12 @@ if ($conn->connect_error) {
 				<?php
 				echo "<table>";
 				echo "<tr><th>Número de ratos na sala</th><th>Sala</th></tr>";
-				while($row = $result3->fetch_assoc()) {
-					echo"<tr><th>". $row["NumeroRatosFinal"]   . "</th><th>" .  $row["Sala"]  ."</th></tr>";
+				while($row = $result4->fetch_assoc()) {
+					echo"<tr><td>". $row["NumeroRatosFinal"]   . "</td><td>" .  $row["Sala"]  ."</td></tr>";
 				}
 				echo "</table>";
 			} else {
-				echo"Não foram encontrados alertas relativo a esta experiência";
+				echo"\nNão foram encontrados alertas relativo a esta experiência";
 			}
 
 
@@ -178,6 +195,9 @@ if ($conn->connect_error) {
 
 
 			}else if(isset($_POST["editarOdor"])) {
+
+				if($resultadoTipo == "INV"){
+
 				$_SESSION['idmedicao'] = $_POST['editarOdor'];
 
 				// Nome da funntion
@@ -199,9 +219,17 @@ if ($conn->connect_error) {
 					echo "Esta experiência já foi iniciada e concluída";
 				}
 
-
+			}else{
+			
+				echo"<script>alert(\"ERRO! : Não podes alterar este campo!\");
+				</script>";
+			
+			
+			}
 
 			}else if(isset($_POST["editarSub"])) {
+				
+				if($resultadoTipo == "INV"){
 				$_SESSION['idmedicao'] = $_POST['editarSub'];
 				
 				// Nome da funntion
@@ -222,7 +250,13 @@ if ($conn->connect_error) {
 				}else{
 					echo "Esta experiência já foi iniciada e concluída";
 				}
-
+			}else{
+			
+				echo"<script>alert(\"ERRO! : Não podes alterar este campo!\");
+				</script>";
+			
+			
+			}
 
 			}else if(isset($_POST["logout"])){
                 session_unset();

@@ -26,6 +26,9 @@ $name = $_SESSION['nome'];
 	</form>
 	<?php
 
+if(empty($username) || empty($password)){
+    header("Location: erro.php");
+}
 // Cria a conexão
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -33,11 +36,28 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
 	die("Conexão falhou: " . $conn->connect_error);
 }
+// Nome da funntion
+$functionTipo = "Mostra_Tipo_User";
+// Prepara a function
+$stmtTipo = $conn->prepare("SELECT $functionTipo(?) AS resultado");
+// Define o valor do parâmetro da function
+$stmtTipo->bind_param('s', $username);
+// Faz a consulta
+$stmtTipo->execute();
+// Obtém o resultado da consulta
+$resultTipo = $stmtTipo->get_result();
+// Guarda o valor retornado pela function
+$resultadoTipo = $resultTipo->fetch_assoc()['resultado'];
+if($resultadoTipo == "INV" ||$resultadoTipo == "TEC"){
+    header("Location: erro.php");
+}
+
+
 		// Realizar a consulta 
 		if(isset($_POST["submitExperiencias"])) {
 
 			// Consulta através de sql
-			$sql = "SELECT * FROM experiencia;";
+			$sql = "CALL Mostra_Todas_Experiencias();";
 			$result = $conn->query($sql);
 
 			// Se a consulta retornar resultados, mostra numa tabela
@@ -146,7 +166,7 @@ if ($conn->connect_error) {
 					$sql8 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Odores` TO '$email'@'%' WITH GRANT OPTION;";
 					$sql9 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Medicoes_Temperatura` TO '$email'@'%' WITH GRANT OPTION;";
 					$sql10 ="GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostrar_User` TO '$email'@'%' WITH GRANT OPTION;";
-					$sql11 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Experiencia` TO '$email'@'%' WITH GRANT OPTION;";
+					$sql11 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Todas_Experiencias` TO '$email'@'%' WITH GRANT OPTION;";
 					$sql12 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Suspend_User` TO '$email'@'%' WITH GRANT OPTION;";
 					$sql13 = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Alertas` TO '$email'@'%' WITH GRANT OPTION;";
 					$sql13a = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`Mostra_Tipo_User` TO '$email'@'%' WITH GRANT OPTION;";
@@ -213,7 +233,7 @@ if ($conn->connect_error) {
 				$sql12c = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getSumRats` TO '$email'@'%';";
 				$sql12d = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getNumSalas` TO '$email'@'%';";
 				$sql12e = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`verifyExperiencia` TO '$email'@'%';";
-				
+				$sql12ee = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`Mostra_Tipo_User` TO '$email'@'%';";
 				$sql12f = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Odores` TO '$email'@'%';";
 				$sql12h = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Mostra_Salas` TO '$email'@'%';";
 				$sql12i = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Delete_Odor` TO '$email'@'%';";
@@ -221,7 +241,7 @@ if ($conn->connect_error) {
 				$sql12k = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Edita_Odor` TO '$email'@'%';";
 				$sql12l = "GRANT ALTER ROUTINE, EXECUTE ON PROCEDURE `pisid`.`Editar_Sub` TO '$email'@'%';"; 
 				$sql12m = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`getLimiteSalas` TO '$email'@'%';";
-
+				$sql12n = "GRANT ALTER ROUTINE, EXECUTE ON FUNCTION `pisid`.`Return_Salas_Utilizadas` TO '$email'@'%';";
 				$sql12 = "GRANT SELECT ON pisid.alerta TO '$email'@'%' WITH GRANT OPTION;";
 				$sql13 = "GRANT SELECT ON pisid.experiencia TO '$email'@'%' WITH GRANT OPTION;";
 				$sql14 = "GRANT SELECT ON pisid.medicoespassagens TO '$email'@'%' WITH GRANT OPTION;";
@@ -248,6 +268,7 @@ if ($conn->connect_error) {
 				$conn2->query($sql12c);
 				$conn2->query($sql12d);
 				$conn2->query($sql12e);
+				$conn2->query($sql12ee);
 				$conn2->query($sql12f);
 				$conn2->query($sql12h);
 				$conn2->query($sql12i);
@@ -255,6 +276,7 @@ if ($conn->connect_error) {
 				$conn2->query($sql12k);
 				$conn2->query($sql12l);
 				$conn2->query($sql12m);
+				$conn2->query($sql12n);
 				$conn2->query($sql13);
 				$conn2->query($sql14);
 				$conn2->query($sql15);
