@@ -1,18 +1,17 @@
 package experiment.mice;
 
 import com.mongodb.*;
-import com.mongodb.util.JSON;
-import com.mongodb.util.JSONParseException;
+import com.google.gson.Gson;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.util.ArrayList;
 import java.security.SecureRandom;
-import java.util.logging.Logger;
+import java.util.ArrayList;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class ReadFromMQTTToMongoDB implements MqttCallback{
@@ -114,10 +113,10 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
                 mqttClient.subscribe(cloudTopicMov);
                 mqttClient.subscribe(cloudTopicTemp);
             } catch (MqttException e) {
-                logger.log(Level.SEVERE, "Error subscribing to topics: %s" + e.getMessage());
+                logger.log(Level.SEVERE, () -> "Error subscribing to topics: %s" + e.getMessage());
             }
         } catch (MqttException e) {
-            logger.log(Level.WARNING, "Error connecting to MQTT server: %s" + e.getMessage());
+            logger.log(Level.WARNING, () -> "Error connecting to MQTT server: %s" + e.getMessage());
         }
     }
 
@@ -146,7 +145,8 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     @Override
     public void messageArrived(String topic, MqttMessage message) {
         try {
-            DBObject documentJson = (DBObject) JSON.parse(message.toString());
+            Gson gson = new Gson();
+            DBObject documentJson = gson.fromJson(message.toString(), DBObject.class);
 
             if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
                 if (processTemperatureValues(documentJson)) {
@@ -163,16 +163,16 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             documentJson.removeField("_id");
             documentLabel.append(documentJson + "\n");
 
-        } catch (JSONParseException | NumberFormatException e) {
+        } catch (NumberFormatException e) {
             try {
                 String messageString = new String(message.getPayload());
                 mongocolwrong.insert(new BasicDBObject("topic", topic)
                         .append("message", messageString));
             } catch (Exception ex) {
-                logger.log(Level.SEVERE, "Error while inserting wrong value into MongoDB: " + ex.getMessage(), ex);
+                logger.log(Level.SEVERE, () -> "Error while inserting wrong value into MongoDB: " + ex.getMessage());
             }
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error while processing message: " + ex.getMessage(), ex);
+            logger.log(Level.SEVERE, () -> "Error while processing message: " + ex.getMessage());
         }
     }
 
@@ -197,16 +197,9 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         return result;
     }
 
-    private void logError(Exception e) {
-        logger.log(Level.WARNING, "Error parsing JSON: " + e.getMessage());
-    }
-
     /**
      * Calculates the ZScore for a current value of temperature, taking into consideration the previous temperature values.
      * Returns the ZScore which will be used to see if a value is an outlier.
-     * @param values
-     * @param value
-     * @return
      */
     private double calculateZScore(double[] values, double value) {
         double sum = 0.0;
@@ -221,8 +214,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         }
         double stdDev = Math.sqrt(squareSum / (values.length - 1));
 
-        double zScore = (value - mean) / stdDev;
-        return zScore;
+        return (value - mean) / stdDev;
     }
 
 

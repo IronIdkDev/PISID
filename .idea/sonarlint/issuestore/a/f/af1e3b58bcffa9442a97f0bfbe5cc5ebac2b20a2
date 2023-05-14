@@ -2,10 +2,10 @@
 W
 java:S1141X"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ8êÌâ»ÿ0
 r	java:S117M"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(çíƒ¿ýÿÿÿÿ8ìÌâ»ÿ0
-m
-java:S2095‘"OUse try-with-resources or close this "PreparedStatement" in a "finally" clause.(ÐÀœ¢8¯Ðâ»ÿ0
 l
 java:S2095s"OUse try-with-resources or close this "PreparedStatement" in a "finally" clause.(ÐÀœ¢8°Ðâ»ÿ0
+m
+java:S2095‘"OUse try-with-resources or close this "PreparedStatement" in a "finally" clause.(ÐÀœ¢8¯Ðâ»ÿ0
 h
 java:S3457\"KFormat specifiers or lambda should be used instead of string concatenation.(‹¾…­8ðÐâ»ÿ0
 h

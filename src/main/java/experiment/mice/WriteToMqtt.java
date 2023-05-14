@@ -34,25 +34,41 @@ public class WriteToMqtt {
         }
     }
 
-    public static void publishSensor(String topic, String message) {
+    public static void publishSensor(String topic, String message, JTextArea textArea) {
         try {
             MqttMessage mqttMessage = new MqttMessage();
             mqttMessage.setPayload(message.getBytes());
 
-            if (mqttclient.isConnected()) {
-                mqttclient.publish(topic, mqttMessage);
-            } else {
-                unsentMessages.add(message);
+            while (!mqttclient.isConnected()) {
+                attemptConnection(message, textArea);
             }
+
+            mqttclient.publish(topic, mqttMessage);
+
         } catch (MqttException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
-    private static void sendUnsentMessages(String movTopic, String tempTopic) {
+    private static void attemptConnection(String message, JTextArea textArea) throws InterruptedException {
+        try {
+            mqttclient.connect();
+        } catch (MqttException e) {
+            if (unsentMessages.isEmpty()) {
+                textArea.append("Not connected. Storing data locally." + "\n");
+            }
+            unsentMessages.add(message);
+            Thread.sleep(5000);
+        }
+    }
+
+    private static void sendUnsentMessages(String movTopic, String tempTopic, JTextArea textArea) {
         while (!unsentMessages.isEmpty()) {
             String message = unsentMessages.removeFirst();
-            publishSensor(message.startsWith("{Hour:") ? tempTopic : movTopic, message);
+            textArea.append(message + "\n");
+            publishSensor(message.startsWith("{Hour:") ? tempTopic : movTopic, message, textArea);
         }
     }
 
@@ -64,23 +80,14 @@ public class WriteToMqtt {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
         Random rand = new Random(123456789);
 
-
-        // Create the MQTT client
-        try {
-            if (!mqttclient.isConnected()) {
-                mqttclient.connect();
-            }
-        } catch (MqttException e) {
-            e.printStackTrace();
-            return;
-        }
-
         JTextArea textArea = getjTextArea();
 
         // Start sending data
-        sendUnsentMessages(movTopic, tempTopic); // Send any unsent messages first
-
         while (running) {
+            if (!unsentMessages.isEmpty()) {
+                textArea.append("Sending unsent messages..." + "\n");
+                sendUnsentMessages(movTopic, tempTopic, textArea);
+            }
             if (rand.nextDouble() < 0.05) {
                 endExperience(movTopic, formatter, textArea);
             } else {
@@ -146,7 +153,7 @@ public class WriteToMqtt {
         LocalDateTime now = LocalDateTime.now();
         String endMsg = "{Hour:\"" + formatter.format(now) + "\", from:" + 0 + ", to:" + 0 + "}";
         textArea.append(endMsg + "\n");
-        publishSensor(topic, endMsg);
+        publishSensor(topic, endMsg, textArea);
     }
 
     private static void sendMovementData(String topic, Random rand, DateTimeFormatter formatter, JTextArea textArea) {
@@ -155,7 +162,7 @@ public class WriteToMqtt {
         LocalDateTime now = LocalDateTime.now();
         String movMsg = HOUR_PREFIX + formatter.format(now) + "\", from:" + from + ", to:" + to + "}";
         textArea.append(movMsg + "\n");
-        publishSensor(topic, movMsg);
+        publishSensor(topic, movMsg, textArea);
     }
 
     private static void sendTemperatureData(String topic, Random rand, DateTimeFormatter formatter, double temperature, JTextArea textArea) {
@@ -180,12 +187,12 @@ public class WriteToMqtt {
         String tempMsg2 = HOUR_PREFIX + formatter.format(now) + "\", Leitura: " + tempValue2 + SENSOR_PREFIX + 2 + "}";
         textArea.append(tempMsg1 + "\n");
         textArea.append(tempMsg2 + "\n");
-        publishSensor(topic, tempMsg1);
-        publishSensor(topic, tempMsg2);
+        publishSensor(topic, tempMsg1, textArea);
+        publishSensor(topic, tempMsg2, textArea);
         if(rand.nextDouble() > 0.95){
             String testMsg = HOUR_PREFIX + formatter.format(now) + "\", Leitura: 3@" + ' ' + SENSOR_PREFIX + 2 + "}";
             textArea.append(testMsg + "\n");
-            publishSensor(topic, testMsg);
+            publishSensor(topic, testMsg, textArea);
         }
     }
 
