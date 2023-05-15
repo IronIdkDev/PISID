@@ -1,7 +1,0 @@
-
-W
-java:S1141p"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ8²ÂûÚ€1
-l
-java:S2095‰"IUse try-with-resources or close this "MongoClient" in a "finally" clause.(õÖÀ¢ûÿÿÿÿ8íÂûÚ€1
-P
-java:S1874Š"-Remove this use of "getDB"; it is deprecated.(øúíŠÿÿÿÿÿ8ıÂûÚ€1
