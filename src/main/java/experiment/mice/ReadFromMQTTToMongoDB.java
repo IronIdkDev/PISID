@@ -1,7 +1,6 @@
 package experiment.mice;
 
 import com.mongodb.*;
-import com.google.gson.Gson;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
@@ -12,6 +11,9 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.mongodb.BasicDBObject;
+import com.mongodb.util.JSON;
+
 
 
 public class ReadFromMQTTToMongoDB implements MqttCallback{
@@ -145,8 +147,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     @Override
     public void messageArrived(String topic, MqttMessage message) {
         try {
-            Gson gson = new Gson();
-            DBObject documentJson = gson.fromJson(message.toString(), DBObject.class);
+            BasicDBObject documentJson = (BasicDBObject) com.mongodb.util.JSON.parse(message.toString());
 
             if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
                 if (processTemperatureValues(documentJson)) {
