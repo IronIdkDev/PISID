@@ -35,6 +35,12 @@ public class MongoToMqtt {
     private static String lastTempMessage = null;
     private static long lastSentTime = 0;
 
+    private static boolean authenticateUser() {
+        String username = JOptionPane.showInputDialog(null, "Enter your username:");
+        String password = JOptionPane.showInputDialog(null, "Enter your password:");
+        return username.equals("admin") && password.equals("password");
+    }
+
     static {
         try {
             connOpts.setUserName(MQTT_USER);
@@ -47,6 +53,15 @@ public class MongoToMqtt {
     }
 
     public static void main(String[] args) throws MqttException {
+
+        boolean authenticated = false;
+        while (!authenticated) {
+            if (!authenticateUser()) {
+                JOptionPane.showMessageDialog(null, "Invalid username or password.");
+            } else {
+                authenticated = true;
+            }
+        }
 
         final boolean[] running = {true};
 

@@ -9,11 +9,11 @@ import java.awt.*;
 import java.io.File;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.mongodb.BasicDBObject;
-import com.mongodb.util.JSON;
-
 
 
 public class ReadFromMQTTToMongoDB implements MqttCallback{
@@ -34,9 +34,13 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static final String MONGOCOLLECTIONWRONG = "WrongValues";
     private ArrayList<Double> tempValues = new ArrayList<>();
     private static final String OUTLIER = "Outlier";
-
-
     private final JTextArea documentLabel;
+
+    private static boolean authenticateUser() {
+        String username = JOptionPane.showInputDialog(null, "Enter your username:");
+        String password = JOptionPane.showInputDialog(null, "Enter your password:");
+        return username.equals("admin") && password.equals("password");
+    }
 
     private ReadFromMQTTToMongoDB() {
         documentLabel = new JTextArea();
@@ -73,6 +77,16 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     }
 
     public static void main(String[] args) throws MqttException {
+
+        boolean authenticated = false;
+        while (!authenticated) {
+            if (!authenticateUser()) {
+                JOptionPane.showMessageDialog(null, "Invalid username or password.");
+            } else {
+                authenticated = true;
+            }
+        }
+
         String server;
         int choice = JOptionPane.showOptionDialog(
                 null,
@@ -84,41 +98,61 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
                 new Object[] {"Cloud Server", "Local Server"},
                 "Cloud Server"
         );
+
         if (choice == JOptionPane.YES_OPTION) {
             server = "tcp://broker.mqtt-dashboard.com:1883";
+            boolean insertNewTopics = JOptionPane.showConfirmDialog(null, "Do you want to insert new topics?", "New Topics", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+            if (insertNewTopics) {
+                int numTopics = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter the number of new topics:"));
+                List<String> newTopics = new ArrayList<>();
+                for (int i = 0; i < numTopics; i++) {
+                    String topic = JOptionPane.showInputDialog(null, "Enter topic " + (i + 1) + ":");
+                    newTopics.add(topic);
+                }
+                ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
+                cloudToMongo.createWindow();
+                if (!newTopics.isEmpty()) {
+                    cloudToMongo.connectToMqttServer(server, newTopics);
+                } else {
+                    System.out.println("Please provide at least one topic.");
+                    System.exit(1);
+                }
+                cloudToMongo.connectMongo();
+            } else {
+                ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
+                cloudToMongo.createWindow();
+                cloudToMongo.connectToMqttServer(server, Collections.singletonList(cloudTopicMov));
+                cloudToMongo.connectMongo();
+            }
         } else {
             server = "tcp://localhost:1883";
+            ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
+            cloudToMongo.createWindow();
+            cloudToMongo.connectToMqttServer(server, Collections.singletonList(cloudTopicMov));
+            cloudToMongo.connectMongo();
         }
-        ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
-        cloudToMongo.createWindow();
-        cloudToMongo.connectToMqttServer(server, cloudTopicMov, cloudTopicTemp);
-        cloudToMongo.connectMongo();
     }
 
     /**
      * Connects to an MQTT server and subscribes to the specified topics.
      *
      * @param cloudServer the URL of the MQTT server to connect to
-     * @param cloudTopicMov the topic to subscribe to for movement data
-     * @param cloudTopicTemp the topic to subscribe to for temperature data
+     * @param topics      the list of topics to subscribe to
      * @throws MqttException if there is an error connecting to the MQTT server or subscribing to topics
      */
-    private void connectToMqttServer(String cloudServer, String cloudTopicMov, String cloudTopicTemp) throws MqttException {
+    private void connectToMqttServer(String cloudServer, List<String> topics) throws MqttException {
         final String CLIENT_ID_PREFIX = "CloudToMongo_";
         SecureRandom secureRandom = new SecureRandom();
         int clientId = secureRandom.nextInt(100000);
 
-        try (MqttClient mqttClient = new MqttClient(cloudServer, CLIENT_ID_PREFIX + clientId + "_" + cloudTopicMov, new MqttDefaultFilePersistence(System.getProperty("user.dir") + File.separator+ "tmp"))) {
+        try (MqttClient mqttClient = new MqttClient(cloudServer, CLIENT_ID_PREFIX + clientId, new MqttDefaultFilePersistence(System.getProperty("user.dir") + File.separator + "tmp"))) {
             mqttClient.connect();
             mqttClient.setCallback(this);
-            try {
-                mqttClient.subscribe(cloudTopicMov);
-                mqttClient.subscribe(cloudTopicTemp);
-            } catch (MqttException e) {
-                logger.log(Level.SEVERE, () -> "Error subscribing to topics: %s" + e.getMessage());
+            for (String topic : topics) {
+                mqttClient.subscribe(topic);
             }
         } catch (MqttException e) {
-            logger.log(Level.WARNING, () -> "Error connecting to MQTT server: %s" + e.getMessage());
+            logger.log(Level.WARNING, "Error connecting to MQTT server: " + e.getMessage());
         }
     }
 

@@ -21,9 +21,14 @@ public class MqttToSql implements MqttCallback {
     private static final String MQTT_PASSWORD = "35AhM0@a";
     private static String mqttTopicMov = "sensoresMov";
     private static String mqttTopicTemp = "sensoresTemp";
-
     private static final Logger logger = Logger.getLogger(MqttToSql.class.getName());
     private final JTextArea documentLabel;
+
+    private static boolean authenticateUser() {
+        String username = JOptionPane.showInputDialog(null, "Enter your username:");
+        String password = JOptionPane.showInputDialog(null, "Enter your password:");
+        return username.equals("admin") && password.equals("password");
+    }
 
     private MqttToSql(){
         documentLabel = new JTextArea();
@@ -69,6 +74,16 @@ public class MqttToSql implements MqttCallback {
     }
 
     public static void main(String[] args) throws MqttException {
+
+        boolean authenticated = false;
+        while (!authenticated) {
+            if (!authenticateUser()) {
+                JOptionPane.showMessageDialog(null, "Invalid username or password.");
+            } else {
+                authenticated = true;
+            }
+        }
+
         MqttToSql mqttToSql = new MqttToSql();
         mqttToSql.createWindow();
         mqttToSql.connectToMqttServer(BROKER_URL, mqttTopicMov, mqttTopicTemp, MQTT_USER, MQTT_PASSWORD);
