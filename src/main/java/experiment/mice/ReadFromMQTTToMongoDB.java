@@ -117,6 +117,7 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
                 ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
                 cloudToMongo.createWindow();
                 if (!newTopics.isEmpty()) {
+                    newTopics.add(cloudTopicTemp); // Add cloudTopicTemp to the new topics list
                     cloudToMongo.connectToMqttServer(server, newTopics);
                 } else {
                     System.out.println("Please provide at least one topic.");
@@ -126,14 +127,20 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             } else {
                 ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
                 cloudToMongo.createWindow();
-                cloudToMongo.connectToMqttServer(server, Collections.singletonList(cloudTopicMov));
+                List<String> topics = new ArrayList<>();
+                topics.add(cloudTopicMov);
+                topics.add(cloudTopicTemp); // Add cloudTopicTemp to the topics list
+                cloudToMongo.connectToMqttServer(server, topics);
                 cloudToMongo.connectMongo();
             }
         } else {
             server = "tcp://localhost:1883";
             ReadFromMQTTToMongoDB cloudToMongo = new ReadFromMQTTToMongoDB();
             cloudToMongo.createWindow();
-            cloudToMongo.connectToMqttServer(server, Collections.singletonList(cloudTopicMov));
+            List<String> topics = new ArrayList<>();
+            topics.add(cloudTopicMov);
+            topics.add(cloudTopicTemp); // Add cloudTopicTemp to the topics list
+            cloudToMongo.connectToMqttServer(server, topics);
             cloudToMongo.connectMongo();
         }
 
