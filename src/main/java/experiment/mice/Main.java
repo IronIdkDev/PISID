@@ -21,52 +21,50 @@ public class Main {
     }
 
     private static void startUIAndAuthentication() {
+        boolean authenticated = false;
 
-        // Set Look and Feel to make the UI look more modern
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            logger.log(Level.SEVERE, "Error setting the look and feel", e);
-        }
+        while (!authenticated) {
+            authenticated = authenticateUser();
 
-        if (authenticateUser()) {
-            JFrame frame = new JFrame(PROGRAM_START);
-            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            frame.setSize(500, 500);
-            frame.setLayout(new BorderLayout());
+            if (authenticated) {
+                JFrame frame = new JFrame(PROGRAM_START);
+                frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+                frame.setSize(500, 500);
+                frame.setLayout(new BorderLayout());
 
-            CircularButton button = new CircularButton(PROGRAM_START, Color.GREEN);
-            button.addActionListener(e -> {
-                if(button.getText().equals(PROGRAM_START)) {
-                    try {
-                        startServers(button);
-                    } catch (IOException ioException) {
-                        logger.log(Level.SEVERE, "Error starting the program", ioException);
+                CircularButton button = new CircularButton(PROGRAM_START, Color.GREEN);
+                button.addActionListener(e -> {
+                    if (button.getText().equals(PROGRAM_START)) {
+                        try {
+                            startServers(button);
+                        } catch (IOException ioException) {
+                            logger.log(Level.SEVERE, "Error starting the program", ioException);
+                        }
+                    } else {
+                        try {
+                            stopServers(button);
+                        } catch (IOException ioException) {
+                            logger.log(Level.SEVERE, "Error stopping the program", ioException);
+                        }
                     }
-                } else {
-                    try {
-                        stopServers(button);
-                    } catch (IOException ioException) {
-                        logger.log(Level.SEVERE, "Error stopping the program", ioException);
-                    }
-                }
-            });
+                });
 
-            JPanel panel = new JPanel();
-            panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-            panel.setOpaque(false);
-            panel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            panel.setAlignmentY(Component.CENTER_ALIGNMENT);
-            panel.add(Box.createHorizontalGlue());
-            panel.add(button);
-            panel.add(Box.createHorizontalGlue());
+                JPanel panel = new JPanel();
+                panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+                panel.setOpaque(false);
+                panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                panel.setAlignmentY(Component.CENTER_ALIGNMENT);
+                panel.add(Box.createHorizontalGlue());
+                panel.add(button);
+                panel.add(Box.createHorizontalGlue());
 
-            frame.add(Box.createVerticalGlue(), BorderLayout.CENTER);
-            frame.add(panel, BorderLayout.CENTER);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        } else {
-            JOptionPane.showMessageDialog(null, "Invalid username or password.");
+                frame.add(Box.createVerticalGlue(), BorderLayout.CENTER);
+                frame.add(panel, BorderLayout.CENTER);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+            } else {
+                JOptionPane.showMessageDialog(null, "Invalid username or password.");
+            }
         }
     }
 

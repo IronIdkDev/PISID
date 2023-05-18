@@ -25,6 +25,11 @@ public class WriteToMqtt {
     private static final Logger logger = Logger.getLogger(WriteToMqtt.class.getName());
     private static final LinkedList<String> unsentMessages = new LinkedList<>();
 
+    private static boolean authenticateUser() {
+        String username = JOptionPane.showInputDialog(null, "Enter your username:");
+        String password = JOptionPane.showInputDialog(null, "Enter your password:");
+        return username.equals("admin") && password.equals("password");
+    }
 
     static {
         try {
@@ -73,6 +78,16 @@ public class WriteToMqtt {
     }
 
     public static void main(String[] args) {
+
+        boolean authenticated = false;
+        while (!authenticated) {
+            if (!authenticateUser()) {
+                JOptionPane.showMessageDialog(null, "Invalid username or password.");
+            } else {
+                authenticated = true;
+            }
+        }
+
         String movTopic = "pisid_mazemov";
         String tempTopic = "pisid_mazetemp";
 
