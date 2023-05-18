@@ -27,8 +27,8 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private static String mongoAddress = "localhost:27015,localhost:25015,localhost:23015";
     private static String mongoReplica = "Sensores";
     private static String mongoDatabase = "sensores";
-    private static String cloudTopicMov = "pisid_mazemov";
-    private static String cloudTopicTemp = "pisid_mazetemp";
+    private static String cloudTopicMov = "pisid_mazemov_2023_oral";
+    private static String cloudTopicTemp = "pisid_mazetemp_2023_oral";
     private static String mongoAuthentication = "false";
     private static final String MONGOCOLLECTIONMOV = "SensoresMovimento";
     private static final String MONGOCOLLECTIONTEMP = "SensoresTemperatura";
@@ -304,6 +304,11 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
 
     public boolean isValidCorridor(int entrada, int saida) {
         boolean result = false;
+
+        if (entrada == 0 && saida == 0){
+            result = true;
+            return result;
+        }
 
         if(entrada > numSalas || entrada < 0 || saida   > numSalas || saida   < 0)
                 return result;
