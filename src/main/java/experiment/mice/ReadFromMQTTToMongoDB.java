@@ -1,5 +1,6 @@
 package experiment.mice;
 
+import ConectToSql.GetFromCloudSQL;
 import com.mongodb.*;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
@@ -35,6 +36,10 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
     private ArrayList<Double> tempValues = new ArrayList<>();
     private static final String OUTLIER = "Outlier";
     private final JTextArea documentLabel;
+
+    private static int numSalas;
+    private static   ArrayList<Integer> salasEntrada;
+    private static   ArrayList<Integer> salasSaida;
 
     private static boolean authenticateUser() {
         String username = JOptionPane.showInputDialog(null, "Enter your username:");
@@ -131,6 +136,12 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
             cloudToMongo.connectToMqttServer(server, Collections.singletonList(cloudTopicMov));
             cloudToMongo.connectMongo();
         }
+
+        GetFromCloudSQL getFromCloud = new GetFromCloudSQL();
+        getFromCloud.connectDBCloud();
+        salasEntrada = getFromCloud.getSalasEntrada();
+        salasSaida = getFromCloud.getSalasSaida();
+        numSalas = getFromCloud.getNumSalas();
     }
 
     /**
@@ -192,8 +203,17 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
                     mongocoltemp.insert(documentJson);
                 }
             } else if (topic.equals(cloudTopicMov) && mongocolmov != null) {
-                mongocolmov.insert(documentJson);
+                if(processMovValues(documentJson))
+                    mongocolmov.insert(documentJson);
+                else{
+                    String messageString = new String(message.getPayload());
+                    mongocolwrong.insert(new BasicDBObject("topic", topic)
+                            .append("message", messageString));
+
+                }
+
             }
+
 
             documentJson.removeField("_id");
             documentLabel.append(documentJson + "\n");
@@ -209,6 +229,13 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         } catch (Exception ex) {
             logger.log(Level.SEVERE, () -> "Error while processing message: " + ex.getMessage());
         }
+    }
+
+    private boolean processMovValues(DBObject document){
+        int salaEntrada = Integer.parseInt(document.get("SalaEntrada").toString());
+        int salaSaida = Integer.parseInt(document.get("SalaSaida").toString());
+        boolean result = isValidCorridor(salaEntrada, salaSaida);
+        return result;
     }
 
     private boolean processTemperatureValues(DBObject document) {
@@ -266,5 +293,20 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         } catch (MqttException e) {
             logger.log(Level.SEVERE, "Error getting message from delivery token: {0}", e.getMessage());
         }
+    }
+
+    public boolean isValidCorridor(int entrada, int saida) {
+        boolean result = false;
+
+        if(entrada > numSalas || entrada < 0 || saida   > numSalas || saida   < 0)
+                return result;
+
+        for(int i=0; i<salasEntrada.size(); i++) {
+            if( salasEntrada.get(i) == entrada && salasSaida.get(i)   == saida) {
+                result = true;
+                break;
+            }
+        }
+        return result;
     }
 }
