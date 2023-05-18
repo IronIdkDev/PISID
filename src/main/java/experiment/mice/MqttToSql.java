@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,6 +24,7 @@ public class MqttToSql implements MqttCallback {
     private static String mqttTopicTemp = "sensoresTemp";
     private static final Logger logger = Logger.getLogger(MqttToSql.class.getName());
     private final JTextArea documentLabel;
+    private static final LinkedList<String> unsentMessages = new LinkedList<>();
 
     private static boolean authenticateUser() {
         String username = JOptionPane.showInputDialog(null, "Enter your username:");
@@ -98,17 +100,43 @@ public class MqttToSql implements MqttCallback {
         options.setPassword(password.toCharArray());
 
         try (MqttClient mqttClient = new MqttClient(broker_url, CLIENT_ID_PREFIX + clientId + "_" + mqttTopicMov, new MqttDefaultFilePersistence(System.getProperty("user.dir") + File.separator + "tmp"))) {
+
             mqttClient.connect(options);
             mqttClient.setCallback(this);
+            sendUnsentMessages(mqttClient);
+
             try {
                 mqttClient.subscribe(mqttTopicMov);
                 mqttClient.subscribe(mqttTopicTemp);
             } catch (MqttException e) {
                 logger.log(Level.SEVERE, "Error subscribing to topics: %s" + e.getMessage());
+                addUnsentMessage(e.getMessage());  // Adicione a mensagem não processada à lista
             }
         } catch (MqttException e) {
             logger.log(Level.WARNING, "Error connecting to MQTT server: %s" + e.getMessage());
+            addUnsentMessage(e.getMessage());  // Adicione a mensagem não processada à lista
+
         }
+    }
+
+
+    private void sendUnsentMessages(MqttClient mqttClient) throws MqttException {
+        while (!unsentMessages.isEmpty()) {
+            String message = unsentMessages.removeFirst();
+            try {
+                mqttClient.publish(mqttTopicMov, message.getBytes(), 0, false);
+                mqttClient.publish(mqttTopicTemp, message.getBytes(), 0, false);
+            } catch (MqttException e) {
+                logger.log(Level.SEVERE, "Error publishing message: %s" + e.getMessage());
+                addUnsentMessage(message);
+            }
+        }
+        System.out.println("funcionou");
+        unsentMessages.clear();
+
+    }
+    private void addUnsentMessage(String message){
+        unsentMessages.addLast(message);
     }
 
     public void messageArrived(String topic, MqttMessage message) throws Exception {
@@ -119,9 +147,9 @@ public class MqttToSql implements MqttCallback {
         if (topic.equals(mqttTopicMov)) {
             String payload = message.toString();
             JSONObject jsonObj = new JSONObject(payload);
-            String hora = jsonObj.getString("Hour");
-            int from = jsonObj.getInt("from");
-            int to = jsonObj.getInt("to");
+            String hora = jsonObj.getString("Hora");
+            int from = jsonObj.getInt("SalaEntrada");
+            int to = jsonObj.getInt("SalaSaida");
             Connection conn = null;
             try {
                 Class.forName(driver);
