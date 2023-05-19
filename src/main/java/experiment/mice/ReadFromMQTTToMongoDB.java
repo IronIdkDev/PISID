@@ -201,6 +201,14 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         try {
             BasicDBObject documentJson = (BasicDBObject) com.mongodb.util.JSON.parse(message.toString());
 
+            // Check if the timestamp is valid (current day)
+            if (!isValidTimestamp(documentJson)) {
+                String messageString = new String(message.getPayload());
+                mongocolwrong.insert(new BasicDBObject("topic", topic)
+                        .append("message", messageString));
+                return;
+            }
+
             if (topic.equals(cloudTopicTemp) && mongocoltemp != null) {
                 if (processTemperatureValues(documentJson)) {
                     documentJson.put(OUTLIER, 1);
@@ -210,21 +218,17 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
                     mongocoltemp.insert(documentJson);
                 }
             } else if (topic.equals(cloudTopicMov) && mongocolmov != null) {
-                if(processMovValues(documentJson))
+                if (processMovValues(documentJson))
                     mongocolmov.insert(documentJson);
-                else{
+                else {
                     String messageString = new String(message.getPayload());
                     mongocolwrong.insert(new BasicDBObject("topic", topic)
                             .append("message", messageString));
-
                 }
-
             }
-
 
             documentJson.removeField("_id");
             documentLabel.append(documentJson + "\n");
-
         } catch (NumberFormatException e) {
             try {
                 String messageString = new String(message.getPayload());
@@ -236,6 +240,16 @@ public class ReadFromMQTTToMongoDB implements MqttCallback{
         } catch (Exception ex) {
             logger.log(Level.SEVERE, () -> "Error while processing message: " + ex.getMessage());
         }
+    }
+
+    private boolean isValidTimestamp(DBObject document) {
+        long timestamp = Long.parseLong(document.get("timestamp").toString());
+        long currentTimestamp = System.currentTimeMillis();
+        long millisecondsInADay = 24 * 60 * 60 * 1000;
+        long todayStart = currentTimestamp - (currentTimestamp % millisecondsInADay);
+        long todayEnd = todayStart + millisecondsInADay;
+
+        return (timestamp >= todayStart && timestamp < todayEnd);
     }
 
     private boolean processMovValues(DBObject document){
